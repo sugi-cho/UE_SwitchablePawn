@@ -4,13 +4,16 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/GameUserSettings.h"
 #include "GameFramework/PlayerStart.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "SwitchableBaseCharacter.h"
 #include "SwitchableFirstPersonCharacter.h"
 #include "SwitchablePawnStart.h"
@@ -92,6 +95,12 @@ void ASwitchablePlayerController::SwitchToThirdPerson()
 
 void ASwitchablePlayerController::SwitchToVR()
 {
+	if (!CanEnterVRMode())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SwitchablePawn: VR device is not available."));
+		return;
+	}
+
 	SwitchMode(ESwitchablePawnMode::VR);
 }
 
@@ -100,15 +109,21 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 	APawn* PreviousPawn = GetPawn();
 	FSwitchablePawnRuntimeState RuntimeState = BuildInitialRuntimeState();
 
-	if (const ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(PreviousPawn))
+	const bool bPreviousPawnIsManaged =
+		PreviousPawn == FirstPersonPawn ||
+		PreviousPawn == ThirdPersonPawn ||
+		PreviousPawn == VRPawn;
+
+	if (bPreviousPawnIsManaged)
 	{
-		RuntimeState = SwitchablePawn->CaptureRuntimeState();
+		if (const ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(PreviousPawn))
+		{
+			RuntimeState = SwitchablePawn->CaptureRuntimeState();
+		}
 	}
 	else if (PreviousPawn)
 	{
-		RuntimeState.Transform = PreviousPawn->GetActorTransform();
-		RuntimeState.Velocity = PreviousPawn->GetVelocity();
-		RuntimeState.ControlRotation = GetControlRotation();
+		// First launch pawn belongs to GameMode; do not inherit its transform.
 	}
 
 	ASwitchableBaseCharacter* NewPawn = GetOrCreatePawnForMode(NewMode, RuntimeState);
@@ -117,6 +132,8 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 		UE_LOG(LogTemp, Warning, TEXT("SwitchablePawn: Failed to create pawn for mode."));
 		return;
 	}
+
+	ApplyModeTransition(NewMode, CurrentMode);
 
 	if (PreviousPawn && PreviousPawn != NewPawn)
 	{
@@ -139,6 +156,52 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 	if (bDestroyInactivePawns && PreviousPawn && PreviousPawn != NewPawn)
 	{
 		PreviousPawn->Destroy();
+	}
+}
+
+void ASwitchablePlayerController::ApplyModeTransition(ESwitchablePawnMode NewMode, ESwitchablePawnMode PreviousMode)
+{
+	const bool bEnteringVR = NewMode == ESwitchablePawnMode::VR && PreviousMode != ESwitchablePawnMode::VR;
+	const bool bLeavingVR = PreviousMode == ESwitchablePawnMode::VR && NewMode != ESwitchablePawnMode::VR;
+
+	if (bEnteringVR)
+	{
+		SetVRModeEnabled(true);
+	}
+
+	if (bLeavingVR)
+	{
+		SetVRModeEnabled(false);
+		SetWindowedMode();
+	}
+}
+
+bool ASwitchablePlayerController::CanEnterVRMode() const
+{
+	return UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
+}
+
+void ASwitchablePlayerController::SetWindowedMode()
+{
+	if (UGameUserSettings* GameUserSettings = UGameUserSettings::GetGameUserSettings())
+	{
+		GameUserSettings->SetFullscreenMode(EWindowMode::Windowed);
+		GameUserSettings->ApplySettings(false);
+	}
+}
+
+void ASwitchablePlayerController::SetVRModeEnabled(bool bEnabled)
+{
+	UHeadMountedDisplayFunctionLibrary::EnableHMD(bEnabled);
+
+	if (GEngine && GEngine->StereoRenderingDevice.IsValid())
+	{
+		GEngine->StereoRenderingDevice->EnableStereo(bEnabled);
+	}
+
+	if (bEnabled)
+	{
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::LocalFloor);
 	}
 }
 
@@ -268,9 +331,9 @@ void ASwitchablePlayerController::AddDefaultMappings()
 	InputMappingContext->MapKey(LookAction, EKeys::Mouse2D);
 	InputMappingContext->MapKey(JumpAction, EKeys::SpaceBar);
 	InputMappingContext->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
-	InputMappingContext->MapKey(SwitchFirstPersonAction, EKeys::F1);
-	InputMappingContext->MapKey(SwitchThirdPersonAction, EKeys::F2);
-	InputMappingContext->MapKey(SwitchVRAction, EKeys::F3);
+	InputMappingContext->MapKey(SwitchFirstPersonAction, EKeys::One);
+	InputMappingContext->MapKey(SwitchThirdPersonAction, EKeys::Two);
+	InputMappingContext->MapKey(SwitchVRAction, EKeys::Three);
 	InputMappingContext->MapKey(VRTeleportAimAction, EKeys::RightMouseButton);
 	InputMappingContext->MapKey(VRTeleportConfirmAction, EKeys::Gamepad_RightTrigger);
 }
@@ -298,7 +361,9 @@ void ASwitchablePlayerController::HandleLook(const FInputActionValue& Value)
 {
 	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
 	{
-		SwitchablePawn->Look(Value.Get<FVector2D>());
+		FVector2D LookValue = Value.Get<FVector2D>();
+		LookValue.Y *= -1.0f;
+		SwitchablePawn->Look(LookValue);
 	}
 }
 

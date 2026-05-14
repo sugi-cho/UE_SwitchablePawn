@@ -102,6 +102,10 @@ private:
 	void HandleVRTeleportAimStarted(const FInputActionValue& Value);
 	void HandleVRTeleportAimCompleted(const FInputActionValue& Value);
 	void HandleVRTeleportConfirm(const FInputActionValue& Value);
+	bool CanEnterVRMode() const;
+	void ApplyModeTransition(ESwitchablePawnMode NewMode, ESwitchablePawnMode PreviousMode);
+	void SetWindowedMode();
+	void SetVRModeEnabled(bool bEnabled);
 
 	ASwitchableBaseCharacter* GetOrCreatePawnForMode(ESwitchablePawnMode Mode, const FSwitchablePawnRuntimeState& RuntimeState);
 	TSubclassOf<ASwitchableBaseCharacter> GetPawnClassForMode(ESwitchablePawnMode Mode) const;

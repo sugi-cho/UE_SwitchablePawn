@@ -78,14 +78,16 @@ TeleportToStartPointByIndex(0);
 
 既定キー:
 
-- `F1`: FirstPerson
-- `F2`: ThirdPerson
-- `F3`: VR
+- `1`: FirstPerson
+- `2`: ThirdPerson
+- `3`: VR
 - `WASD`: 移動
 - `Mouse`: Look
 - `Space`: Jump
 - `RightMouseButton`: VR teleport aim / confirm
 - `Gamepad_RightTrigger`: VR teleport confirm
+
+VR へ切り替える時は HMD / stereo を有効化し、VR から FirstPerson / ThirdPerson に戻る時は Windowed に戻します。
 
 プロジェクト側で独自の `InputMappingContext` / `InputAction` を指定することもできます。
 
