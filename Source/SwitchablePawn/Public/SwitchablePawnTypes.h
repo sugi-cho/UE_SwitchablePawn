@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "SwitchablePawnTypes.generated.h"
 
+class AActor;
+
 UENUM(BlueprintType)
 enum class ESwitchablePawnMode : uint8
 {
@@ -20,7 +22,7 @@ struct SWITCHABLEPAWN_API FSwitchableTeleportPoint
 	FName Name = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn")
-	FTransform Transform = FTransform::Identity;
+	TObjectPtr<AActor> TargetActor = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn")
 	bool bKeepCurrentYaw = false;

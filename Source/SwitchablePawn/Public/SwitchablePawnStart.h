@@ -24,6 +24,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Start")
 	FTransform GetStartTransform() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Start")
+	bool ResolvePresetPointTransform(const FSwitchableTeleportPoint& Point, FTransform& OutTransform) const;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Start")
 	TObjectPtr<USceneComponent> SceneRoot;
 

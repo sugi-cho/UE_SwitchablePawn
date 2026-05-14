@@ -63,7 +63,7 @@ Level に `ASwitchablePawnStart` を配置します。
 主な設定:
 
 - `bUseAsDefaultStart`: 起動時の位置として使う
-- `PresetPoints`: 名前付きテレポート位置
+- `PresetPoints`: 名前付きテレポート位置。`TargetActor` に配置済み Actor を指定し、その Actor の Transform を使う
 
 Blueprint / C++ から次の API で移動できます。
 

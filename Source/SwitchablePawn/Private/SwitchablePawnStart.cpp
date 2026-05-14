@@ -42,3 +42,14 @@ FTransform ASwitchablePawnStart::GetStartTransform() const
 {
 	return GetActorTransform();
 }
+
+bool ASwitchablePawnStart::ResolvePresetPointTransform(const FSwitchableTeleportPoint& Point, FTransform& OutTransform) const
+{
+	if (Point.TargetActor)
+	{
+		OutTransform = Point.TargetActor->GetActorTransform();
+		return true;
+	}
+
+	return false;
+}

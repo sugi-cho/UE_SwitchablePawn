@@ -150,7 +150,12 @@ bool ASwitchablePlayerController::TeleportToStartPoint(FName PointName)
 		return false;
 	}
 
-	FTransform TargetTransform = Point.Transform;
+	if (!IsValid(Point.TargetActor))
+	{
+		return false;
+	}
+
+	FTransform TargetTransform = Point.TargetActor->GetActorTransform();
 	if (Point.bKeepCurrentYaw)
 	{
 		FRotator Rotation = TargetTransform.Rotator();
@@ -176,7 +181,12 @@ bool ASwitchablePlayerController::TeleportToStartPointByIndex(int32 Index)
 		return false;
 	}
 
-	FTransform TargetTransform = Point.Transform;
+	if (!IsValid(Point.TargetActor))
+	{
+		return false;
+	}
+
+	FTransform TargetTransform = Point.TargetActor->GetActorTransform();
 	if (Point.bKeepCurrentYaw)
 	{
 		FRotator Rotation = TargetTransform.Rotator();
