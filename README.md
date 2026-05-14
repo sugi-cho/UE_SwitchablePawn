@@ -93,14 +93,37 @@ VR へ切り替える時は HMD / stereo を有効化し、VR から FirstPerson
 
 ## モデル
 
-ThirdPerson の body mesh、VR の hand mesh は Plugin 内にコピーして使用できます。
+ThirdPerson の body mesh、VR の hand mesh は Plugin 内にコピーしません。  
+この Plugin の BP は、UE テンプレート側のアセットを参照する前提です。
 
-差し替え用 property:
+そのため、BP の設定をそのまま使うなら次のテンプレートが必要です。
+
+- Third Person Template
+- First Person Template
+- VR Template
+
+差し替え用 property / component 設定:
 
 - `ASwitchableThirdPersonCharacter::BodyMesh`
 - `ASwitchableVRCharacter::HandSkeletalMesh`
+- `CharacterMesh0` / `FirstPersonMesh` / `LeftHandMesh` / `RightHandMesh` の `Animation Mode`
+- 各 Mesh の `Anim Class`
+- `CameraDistance`
 
-最終的な Plugin は、UE Template プロジェクトや Template asset が無い状態でも動作できる必要があります。
+目安:
+
+- ThirdPerson の見た目を変える: `BodyMesh`
+- VR の手モデルを変える: `HandSkeletalMesh`
+- 動かすアニメを変える: 各 Mesh の `Anim Class`
+- カメラ距離を変える: `CameraDistance`
+
+補足:
+
+- `Animation Mode` が `Use Animation Blueprint` でないと、Mesh は出ても動きません。
+- テンプレートを使わずに運用する場合は、BP 側で参照先を自前アセットへ差し替えてください。
+
+最終的な Plugin は、テンプレート依存を BP の参照に閉じる方針です。  
+つまり、Plugin 本体の C++ はテンプレートアセットを複製せず、BP 側の参照だけがテンプレート依存になります。
 
 ## 実装済み機能
 

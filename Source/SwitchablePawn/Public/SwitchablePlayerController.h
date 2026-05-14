@@ -83,7 +83,10 @@ public:
 	TObjectPtr<UInputAction> SwitchVRAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
-	TObjectPtr<UInputAction> VRTeleportAimAction = nullptr;
+	TObjectPtr<UInputAction> VRTeleportAimLeftAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
+	TObjectPtr<UInputAction> VRTeleportAimRightAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	TObjectPtr<UInputAction> VRTeleportConfirmAction = nullptr;
@@ -99,8 +102,10 @@ private:
 	void HandleLook(const FInputActionValue& Value);
 	void HandleJumpStarted(const FInputActionValue& Value);
 	void HandleJumpCompleted(const FInputActionValue& Value);
-	void HandleVRTeleportAimStarted(const FInputActionValue& Value);
-	void HandleVRTeleportAimCompleted(const FInputActionValue& Value);
+	void HandleVRTeleportAimLeftStarted(const FInputActionValue& Value);
+	void HandleVRTeleportAimLeftCompleted(const FInputActionValue& Value);
+	void HandleVRTeleportAimRightStarted(const FInputActionValue& Value);
+	void HandleVRTeleportAimRightCompleted(const FInputActionValue& Value);
 	void HandleVRTeleportConfirm(const FInputActionValue& Value);
 	bool CanEnterVRMode() const;
 	void ApplyModeTransition(ESwitchablePawnMode NewMode, ESwitchablePawnMode PreviousMode);

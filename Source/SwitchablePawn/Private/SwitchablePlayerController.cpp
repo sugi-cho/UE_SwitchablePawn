@@ -77,8 +77,10 @@ void ASwitchablePlayerController::SetupInputComponent()
 		EnhancedInput->BindAction(SwitchFirstPersonAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::SwitchToFirstPerson);
 		EnhancedInput->BindAction(SwitchThirdPersonAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::SwitchToThirdPerson);
 		EnhancedInput->BindAction(SwitchVRAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::SwitchToVR);
-		EnhancedInput->BindAction(VRTeleportAimAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::HandleVRTeleportAimStarted);
-		EnhancedInput->BindAction(VRTeleportAimAction, ETriggerEvent::Completed, this, &ASwitchablePlayerController::HandleVRTeleportAimCompleted);
+		EnhancedInput->BindAction(VRTeleportAimLeftAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::HandleVRTeleportAimLeftStarted);
+		EnhancedInput->BindAction(VRTeleportAimLeftAction, ETriggerEvent::Completed, this, &ASwitchablePlayerController::HandleVRTeleportAimLeftCompleted);
+		EnhancedInput->BindAction(VRTeleportAimRightAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::HandleVRTeleportAimRightStarted);
+		EnhancedInput->BindAction(VRTeleportAimRightAction, ETriggerEvent::Completed, this, &ASwitchablePlayerController::HandleVRTeleportAimRightCompleted);
 		EnhancedInput->BindAction(VRTeleportConfirmAction, ETriggerEvent::Started, this, &ASwitchablePlayerController::HandleVRTeleportConfirm);
 	}
 }
@@ -293,9 +295,13 @@ void ASwitchablePlayerController::EnsureFallbackInputAssets()
 	{
 		SwitchVRAction = CreateInputAction(this, TEXT("IA_SwitchVR_Runtime"), EInputActionValueType::Boolean);
 	}
-	if (!VRTeleportAimAction)
+	if (!VRTeleportAimLeftAction)
 	{
-		VRTeleportAimAction = CreateInputAction(this, TEXT("IA_VRTeleportAim_Runtime"), EInputActionValueType::Boolean);
+		VRTeleportAimLeftAction = CreateInputAction(this, TEXT("IA_VRTeleportAimLeft_Runtime"), EInputActionValueType::Boolean);
+	}
+	if (!VRTeleportAimRightAction)
+	{
+		VRTeleportAimRightAction = CreateInputAction(this, TEXT("IA_VRTeleportAimRight_Runtime"), EInputActionValueType::Boolean);
 	}
 	if (!VRTeleportConfirmAction)
 	{
@@ -330,12 +336,21 @@ void ASwitchablePlayerController::AddDefaultMappings()
 
 	InputMappingContext->MapKey(LookAction, EKeys::Mouse2D);
 	InputMappingContext->MapKey(JumpAction, EKeys::SpaceBar);
-	InputMappingContext->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
+	InputMappingContext->MapKey(MoveAction, EKeys::OculusTouch_Left_Thumbstick_2D);
+	InputMappingContext->MapKey(MoveAction, EKeys::OculusTouch_Right_Thumbstick_2D);
+	InputMappingContext->MapKey(MoveAction, EKeys::ValveIndex_Left_Thumbstick_2D);
+	InputMappingContext->MapKey(MoveAction, EKeys::ValveIndex_Right_Thumbstick_2D);
+	InputMappingContext->MapKey(MoveAction, EKeys::MixedReality_Left_Thumbstick_2D);
+	InputMappingContext->MapKey(MoveAction, EKeys::MixedReality_Right_Thumbstick_2D);
 	InputMappingContext->MapKey(SwitchFirstPersonAction, EKeys::One);
 	InputMappingContext->MapKey(SwitchThirdPersonAction, EKeys::Two);
 	InputMappingContext->MapKey(SwitchVRAction, EKeys::Three);
-	InputMappingContext->MapKey(VRTeleportAimAction, EKeys::RightMouseButton);
-	InputMappingContext->MapKey(VRTeleportConfirmAction, EKeys::Gamepad_RightTrigger);
+	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::OculusTouch_Left_Trigger_Click);
+	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::ValveIndex_Left_Trigger_Click);
+	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::MixedReality_Left_Trigger_Click);
+	InputMappingContext->MapKey(VRTeleportAimRightAction, EKeys::OculusTouch_Right_Trigger_Click);
+	InputMappingContext->MapKey(VRTeleportAimRightAction, EKeys::ValveIndex_Right_Trigger_Click);
+	InputMappingContext->MapKey(VRTeleportAimRightAction, EKeys::MixedReality_Right_Trigger_Click);
 }
 
 void ASwitchablePlayerController::AddMappingContextToLocalPlayer()
@@ -383,15 +398,31 @@ void ASwitchablePlayerController::HandleJumpCompleted(const FInputActionValue& V
 	}
 }
 
-void ASwitchablePlayerController::HandleVRTeleportAimStarted(const FInputActionValue& Value)
+void ASwitchablePlayerController::HandleVRTeleportAimLeftStarted(const FInputActionValue& Value)
 {
 	if (ASwitchableVRCharacter* SwitchableVRPawn = Cast<ASwitchableVRCharacter>(GetPawn()))
 	{
-		SwitchableVRPawn->BeginTeleportAim();
+		SwitchableVRPawn->BeginTeleportAim(true);
 	}
 }
 
-void ASwitchablePlayerController::HandleVRTeleportAimCompleted(const FInputActionValue& Value)
+void ASwitchablePlayerController::HandleVRTeleportAimLeftCompleted(const FInputActionValue& Value)
+{
+	if (ASwitchableVRCharacter* SwitchableVRPawn = Cast<ASwitchableVRCharacter>(GetPawn()))
+	{
+		SwitchableVRPawn->ConfirmTeleport();
+	}
+}
+
+void ASwitchablePlayerController::HandleVRTeleportAimRightStarted(const FInputActionValue& Value)
+{
+	if (ASwitchableVRCharacter* SwitchableVRPawn = Cast<ASwitchableVRCharacter>(GetPawn()))
+	{
+		SwitchableVRPawn->BeginTeleportAim(false);
+	}
+}
+
+void ASwitchablePlayerController::HandleVRTeleportAimRightCompleted(const FInputActionValue& Value)
 {
 	if (ASwitchableVRCharacter* SwitchableVRPawn = Cast<ASwitchableVRCharacter>(GetPawn()))
 	{

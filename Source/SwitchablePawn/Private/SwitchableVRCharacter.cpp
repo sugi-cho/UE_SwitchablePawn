@@ -3,10 +3,14 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/SplineComponent.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MotionControllerComponent.h"
 #include "NavigationSystem.h"
+#if WITH_EDITOR
+#include "UObject/UnrealType.h"
+#endif
 
 ASwitchableVRCharacter::ASwitchableVRCharacter()
 {
@@ -19,6 +23,7 @@ ASwitchableVRCharacter::ASwitchableVRCharacter()
 	VRCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("VRCamera"));
 	VRCamera->SetupAttachment(VRRoot);
 	VRCamera->bUsePawnControlRotation = false;
+	VRCamera->bLockToHmd = true;
 
 	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("LeftController"));
 	LeftController->SetupAttachment(VRRoot);
@@ -30,9 +35,22 @@ ASwitchableVRCharacter::ASwitchableVRCharacter()
 
 	LeftHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LeftHandMesh"));
 	LeftHandMesh->SetupAttachment(LeftController);
+	LeftHandMesh->SetRelativeLocation(FVector(-2.98126f, -3.5f, 4.561753f));
+	LeftHandMesh->SetRelativeRotation(FRotator(90.0f, -25.0f, -180.0f));
+	LeftHandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LeftHandMesh->SetGenerateOverlapEvents(false);
 
 	RightHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RightHandMesh"));
 	RightHandMesh->SetupAttachment(RightController);
+	RightHandMesh->SetRelativeLocation(FVector(-2.98126f, 3.5f, 4.561753f));
+	RightHandMesh->SetRelativeRotation(FRotator(89.99999f, 25.0f, 0.0f));
+	RightHandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	RightHandMesh->SetGenerateOverlapEvents(false);
+
+	TeleportPreviewSpline = CreateDefaultSubobject<USplineComponent>(TEXT("TeleportPreviewSpline"));
+	TeleportPreviewSpline->SetupAttachment(VRRoot);
+	TeleportPreviewSpline->SetHiddenInGame(true);
+	TeleportPreviewSpline->SetVisibility(true);
 }
 
 void ASwitchableVRCharacter::BeginPlay()
@@ -46,6 +64,20 @@ void ASwitchableVRCharacter::BeginPlay()
 	}
 }
 
+void ASwitchableVRCharacter::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	RefreshTeleportPreview();
+}
+
+#if WITH_EDITOR
+void ASwitchableVRCharacter::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	RefreshTeleportPreview();
+}
+#endif
+
 void ASwitchableVRCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -54,6 +86,13 @@ void ASwitchableVRCharacter::Tick(float DeltaSeconds)
 	{
 		UpdateTeleportAim();
 	}
+
+#if WITH_EDITOR
+	if (GetWorld() && (GetWorld()->WorldType == EWorldType::Editor || GetWorld()->WorldType == EWorldType::EditorPreview))
+	{
+		RefreshTeleportPreview();
+	}
+#endif
 }
 
 void ASwitchableVRCharacter::Move(const FVector2D& MoveValue)
@@ -81,29 +120,127 @@ void ASwitchableVRCharacter::Look(const FVector2D& LookValue)
 	AddControllerYawInput(LookValue.X);
 }
 
-void ASwitchableVRCharacter::BeginTeleportAim()
+void ASwitchableVRCharacter::BeginTeleportAim(bool bUseLeftHand)
 {
+	TeleportTraceController = bUseLeftHand ? LeftController : RightController;
 	bTeleportAiming = true;
 	UpdateTeleportAim();
+}
+
+FVector ASwitchableVRCharacter::GetTeleportTraceStartLocation(const UMotionControllerComponent* TraceController) const
+{
+	if (!TraceController)
+	{
+		return FVector::ZeroVector;
+	}
+
+	return TraceController->GetComponentTransform().TransformPosition(TeleportTraceStartOffset);
+}
+
+FRotator ASwitchableVRCharacter::GetTeleportTraceRotation(const UMotionControllerComponent* TraceController) const
+{
+	if (!TraceController)
+	{
+		return FRotator::ZeroRotator;
+	}
+
+	return (TraceController->GetComponentRotation() + TeleportTraceRotationOffset).GetNormalized();
+}
+
+void ASwitchableVRCharacter::RefreshTeleportPreview()
+{
+	if (!TeleportPreviewSpline || !GetWorld())
+	{
+		return;
+	}
+
+	const UMotionControllerComponent* TraceController = TeleportTraceController ? TeleportTraceController.Get() : RightController.Get();
+	if (!TraceController)
+	{
+		return;
+	}
+
+	TArray<FVector> Points;
+	const FVector Start = GetTeleportTraceStartLocation(TraceController);
+	const FRotator Rotation = GetTeleportTraceRotation(TraceController);
+	const FVector Forward = Rotation.Vector();
+	const FVector Velocity = (Forward * TeleportArcInitialSpeed) + (GetActorUpVector() * (TeleportArcInitialSpeed * TeleportArcForwardBias));
+	const FVector Gravity(0.0f, 0.0f, GetWorld()->GetGravityZ() * TeleportArcGravityScale);
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(SwitchableVRTeleportPreview), false, this);
+	FVector CurrentPosition = Start;
+	FVector CurrentVelocity = Velocity;
+
+	Points.Add(Start);
+
+	for (float Time = 0.0f; Time <= TeleportArcMaxTime; Time += TeleportArcTimeStep)
+	{
+		CurrentVelocity += Gravity * TeleportArcTimeStep;
+		const FVector NextPosition = CurrentPosition + CurrentVelocity * TeleportArcTimeStep;
+		FHitResult Hit;
+		const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, CurrentPosition, NextPosition, ECC_Visibility, Params);
+		Points.Add(bHit ? Hit.ImpactPoint : NextPosition);
+		if (bHit)
+		{
+			break;
+		}
+
+		CurrentPosition = NextPosition;
+
+		if (FVector::DistSquared(Start, CurrentPosition) > FMath::Square(TeleportTraceDistance))
+		{
+			break;
+		}
+	}
+
+	TeleportPreviewSpline->ClearSplinePoints(false);
+	for (int32 Index = 0; Index < Points.Num(); ++Index)
+	{
+		TeleportPreviewSpline->AddSplinePoint(Points[Index], ESplineCoordinateSpace::World, false);
+	}
+	TeleportPreviewSpline->UpdateSpline();
 }
 
 void ASwitchableVRCharacter::UpdateTeleportAim()
 {
 	bHasValidTeleportDestination = false;
 
-	if (!RightController || !GetWorld())
+	const UMotionControllerComponent* TraceController = TeleportTraceController ? TeleportTraceController.Get() : RightController.Get();
+	if (!TraceController || !GetWorld())
 	{
 		return;
 	}
 
-	const FVector Start = RightController->GetComponentLocation();
-	const FVector End = Start + RightController->GetForwardVector() * TeleportTraceDistance;
+	const FVector Start = GetTeleportTraceStartLocation(TraceController);
+	const FVector Forward = GetTeleportTraceRotation(TraceController).Vector();
+	const FVector Velocity = (Forward * TeleportArcInitialSpeed) + (GetActorUpVector() * (TeleportArcInitialSpeed * TeleportArcForwardBias));
+	const FVector Gravity(0.0f, 0.0f, GetWorld()->GetGravityZ() * TeleportArcGravityScale);
 
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(SwitchableVRTeleport), false, this);
+	FVector CurrentPosition = Start;
+	FVector CurrentVelocity = Velocity;
+	bool bHit = false;
 	FHitResult Hit;
-	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
-	DrawDebugLine(GetWorld(), Start, bHit ? Hit.ImpactPoint : End, bHit ? FColor::Green : FColor::Red, false, 0.0f, 0, 2.0f);
+	for (float Time = 0.0f; Time <= TeleportArcMaxTime; Time += TeleportArcTimeStep)
+	{
+		CurrentVelocity += Gravity * TeleportArcTimeStep;
+		const FVector NextPosition = CurrentPosition + CurrentVelocity * TeleportArcTimeStep;
+		bHit = GetWorld()->LineTraceSingleByChannel(Hit, CurrentPosition, NextPosition, ECC_Visibility, Params);
+		DrawDebugLine(GetWorld(), CurrentPosition, bHit ? Hit.ImpactPoint : NextPosition, bHit ? FColor::Green : FColor::Red, false, 0.0f, 0, 2.0f);
+
+		if (bHit)
+		{
+			break;
+		}
+
+		CurrentPosition = NextPosition;
+
+		if (FVector::DistSquared(Start, CurrentPosition) > FMath::Square(TeleportTraceDistance))
+		{
+			break;
+		}
+	}
 
 	if (!bHit)
 	{
@@ -128,6 +265,7 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 	TeleportDestination = Candidate;
 	bHasValidTeleportDestination = true;
 	DrawDebugSphere(GetWorld(), TeleportDestination, 24.0f, 16, FColor::Green, false, 0.0f);
+	RefreshTeleportPreview();
 }
 
 bool ASwitchableVRCharacter::ConfirmTeleport()
@@ -151,4 +289,6 @@ void ASwitchableVRCharacter::CancelTeleportAim()
 {
 	bTeleportAiming = false;
 	bHasValidTeleportDestination = false;
+	TeleportTraceController = nullptr;
+	RefreshTeleportPreview();
 }
