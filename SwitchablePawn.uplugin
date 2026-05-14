@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Switchable Pawn",
+	"Description": "Reusable player controller and pawn set for switching FirstPerson, ThirdPerson, and VR modes during play.",
+	"Category": "Gameplay",
+	"CreatedBy": "sugi-cho",
+	"CanContainContent": true,
+	"EnabledByDefault": true,
+	"Modules": [
+		{
+			"Name": "SwitchablePawn",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "EnhancedInput",
+			"Enabled": true
+		},
+		{
+			"Name": "OpenXR",
+			"Enabled": true
+		}
+	]
+}
