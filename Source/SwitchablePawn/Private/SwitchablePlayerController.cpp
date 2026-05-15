@@ -151,6 +151,7 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 	}
 
 	NewPawn->SetSwitchableActive(true);
+	ApplyMovementSettingsToPawn(NewPawn);
 	Possess(NewPawn);
 	NewPawn->ApplyRuntimeState(RuntimeState);
 	CurrentMode = NewMode;
@@ -158,6 +159,25 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 	if (bDestroyInactivePawns && PreviousPawn && PreviousPawn != NewPawn)
 	{
 		PreviousPawn->Destroy();
+	}
+}
+
+void ASwitchablePlayerController::SetConstrainMovementToNavMesh(bool bNewConstrain)
+{
+	bConstrainMovementToNavMesh = bNewConstrain;
+
+	ApplyMovementSettingsToPawn(Cast<ASwitchableBaseCharacter>(GetPawn()));
+	if (IsValid(FirstPersonPawn))
+	{
+		ApplyMovementSettingsToPawn(FirstPersonPawn);
+	}
+	if (IsValid(ThirdPersonPawn))
+	{
+		ApplyMovementSettingsToPawn(ThirdPersonPawn);
+	}
+	if (IsValid(VRPawn))
+	{
+		ApplyMovementSettingsToPawn(VRPawn);
 	}
 }
 
@@ -480,9 +500,18 @@ ASwitchableBaseCharacter* ASwitchablePlayerController::GetOrCreatePawnForMode(ES
 	*StoredPawn = GetWorld()->SpawnActor<ASwitchableBaseCharacter>(PawnClass, RuntimeState.Transform, SpawnParams);
 	if (*StoredPawn)
 	{
+		ApplyMovementSettingsToPawn(*StoredPawn);
 		(*StoredPawn)->SetSwitchableActive(false);
 	}
 	return *StoredPawn;
+}
+
+void ASwitchablePlayerController::ApplyMovementSettingsToPawn(ASwitchableBaseCharacter* SwitchablePawn) const
+{
+	if (SwitchablePawn)
+	{
+		SwitchablePawn->SetConstrainMovementToNavMesh(bConstrainMovementToNavMesh);
+	}
 }
 
 TSubclassOf<ASwitchableBaseCharacter> ASwitchablePlayerController::GetPawnClassForMode(ESwitchablePawnMode Mode) const

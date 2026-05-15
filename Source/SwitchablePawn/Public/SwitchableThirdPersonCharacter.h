@@ -14,7 +14,7 @@ class SWITCHABLEPAWN_API ASwitchableThirdPersonCharacter : public ASwitchableBas
 	GENERATED_BODY()
 
 public:
-	ASwitchableThirdPersonCharacter();
+	ASwitchableThirdPersonCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 

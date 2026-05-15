@@ -55,6 +55,7 @@ Default Pawn は未設定、または Plugin 側の Pawn を指定します。
 - `ASwitchableVRCharacter`
 
 `ASwitchablePlayerController` は開始時に `DefaultMode` の Pawn を生成して Possess します。
+NavMesh 制限は `ASwitchablePlayerController::bConstrainMovementToNavMesh` で全モード共通に切り替えます。
 
 ## Level 設定
 
@@ -130,6 +131,9 @@ ThirdPerson の body mesh、VR の hand mesh は Plugin 内にコピーしませ
 - FirstPerson / ThirdPerson / VR の Pawn 切り替え
 - 切り替え時の Transform / Velocity / ControlRotation 引き継ぎ
 - FirstPerson / ThirdPerson の移動と Jump
+- `ASwitchablePlayerController` の `bConstrainMovementToNavMesh` による全モード移動の NavMesh 制限
+- `ASwitchableVRCharacter` の teleport ray は既定で赤/緑のデバッグ表示
+- `TeleportPreviewMesh` / `TeleportPreviewMaterial` は任意の見た目変更用
 - VR の HMD Camera / MotionController / Hand mesh slot
 - VR line trace teleport
 - NavMesh projection による teleport destination 判定

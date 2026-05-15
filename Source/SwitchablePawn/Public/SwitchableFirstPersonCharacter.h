@@ -12,7 +12,7 @@ class SWITCHABLEPAWN_API ASwitchableFirstPersonCharacter : public ASwitchableBas
 	GENERATED_BODY()
 
 public:
-	ASwitchableFirstPersonCharacter();
+	ASwitchableFirstPersonCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Camera")
 	TObjectPtr<UCameraComponent> FirstPersonCamera;

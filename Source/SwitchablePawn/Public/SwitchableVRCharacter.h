@@ -8,7 +8,10 @@ class UCameraComponent;
 class UMotionControllerComponent;
 class USkeletalMesh;
 class USkeletalMeshComponent;
+class UMaterialInterface;
+class UStaticMesh;
 class USplineComponent;
+class USplineMeshComponent;
 struct FPropertyChangedEvent;
 
 UCLASS(Blueprintable)
@@ -17,7 +20,7 @@ class SWITCHABLEPAWN_API ASwitchableVRCharacter : public ASwitchableBaseCharacte
 	GENERATED_BODY()
 
 public:
-	ASwitchableVRCharacter();
+	ASwitchableVRCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
@@ -95,6 +98,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	bool bProjectTeleportToNavigation = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
+	bool bUseTeleportPreviewMesh = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
+	TObjectPtr<UStaticMesh> TeleportPreviewMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
+	TObjectPtr<UMaterialInterface> TeleportPreviewMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview", meta = (ClampMin = 0.001))
+	float TeleportPreviewRadius = 0.025f;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Switchable Pawn|VR")
 	bool bHasValidTeleportDestination = false;
 
@@ -106,9 +121,14 @@ public:
 
 private:
 	void RefreshTeleportPreview();
+	void RefreshTeleportPreviewMesh(const TArray<FVector>& Points);
+	void EnsureTeleportPreviewSegmentCount(int32 SegmentCount);
+	void ClearTeleportPreviewMesh();
 	FVector GetTeleportTraceStartLocation(const UMotionControllerComponent* TraceController) const;
 	FRotator GetTeleportTraceRotation(const UMotionControllerComponent* TraceController) const;
 
 	bool bTeleportAiming = false;
 	TObjectPtr<UMotionControllerComponent> TeleportTraceController = nullptr;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<USplineMeshComponent>> TeleportPreviewSegments;
 };

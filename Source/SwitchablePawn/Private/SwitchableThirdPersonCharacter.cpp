@@ -6,7 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
-ASwitchableThirdPersonCharacter::ASwitchableThirdPersonCharacter()
+ASwitchableThirdPersonCharacter::ASwitchableThirdPersonCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 	bUseControllerRotationYaw = false;

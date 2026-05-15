@@ -4,18 +4,28 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MotionControllerComponent.h"
 #include "NavigationSystem.h"
+#include "Materials/MaterialInterface.h"
+#include "UObject/ConstructorHelpers.h"
 #if WITH_EDITOR
 #include "UObject/UnrealType.h"
 #endif
 
-ASwitchableVRCharacter::ASwitchableVRCharacter()
+ASwitchableVRCharacter::ASwitchableVRCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultTeleportPreviewMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	if (DefaultTeleportPreviewMesh.Succeeded())
+	{
+		TeleportPreviewMesh = DefaultTeleportPreviewMesh.Object;
+	}
 
 	VRRoot = CreateDefaultSubobject<USceneComponent>(TEXT("VRRoot"));
 	VRRoot->SetupAttachment(RootComponent);
@@ -199,6 +209,88 @@ void ASwitchableVRCharacter::RefreshTeleportPreview()
 		TeleportPreviewSpline->AddSplinePoint(Points[Index], ESplineCoordinateSpace::World, false);
 	}
 	TeleportPreviewSpline->UpdateSpline();
+
+	if (bUseTeleportPreviewMesh)
+	{
+		RefreshTeleportPreviewMesh(Points);
+	}
+	else
+	{
+		ClearTeleportPreviewMesh();
+	}
+}
+
+void ASwitchableVRCharacter::RefreshTeleportPreviewMesh(const TArray<FVector>& Points)
+{
+	if (!TeleportPreviewSpline)
+	{
+		return;
+	}
+
+	EnsureTeleportPreviewSegmentCount(FMath::Max(0, Points.Num() - 1));
+
+	for (int32 SegmentIndex = 0; SegmentIndex < TeleportPreviewSegments.Num(); ++SegmentIndex)
+	{
+		USplineMeshComponent* Segment = TeleportPreviewSegments[SegmentIndex].Get();
+		if (!Segment)
+		{
+			continue;
+		}
+
+		const bool bVisible = SegmentIndex < Points.Num() - 1;
+		Segment->SetVisibility(bVisible, true);
+		Segment->SetHiddenInGame(!bVisible);
+		if (!bVisible)
+		{
+			continue;
+		}
+
+		const FVector StartPos = TeleportPreviewSpline->GetLocationAtSplinePoint(SegmentIndex, ESplineCoordinateSpace::Local);
+		const FVector StartTangent = TeleportPreviewSpline->GetTangentAtSplinePoint(SegmentIndex, ESplineCoordinateSpace::Local);
+		const FVector EndPos = TeleportPreviewSpline->GetLocationAtSplinePoint(SegmentIndex + 1, ESplineCoordinateSpace::Local);
+		const FVector EndTangent = TeleportPreviewSpline->GetTangentAtSplinePoint(SegmentIndex + 1, ESplineCoordinateSpace::Local);
+
+		Segment->SetStartAndEnd(StartPos, StartTangent, EndPos, EndTangent, true);
+		Segment->SetStartScale(FVector2D(TeleportPreviewRadius, TeleportPreviewRadius));
+		Segment->SetEndScale(FVector2D(TeleportPreviewRadius, TeleportPreviewRadius));
+
+		if (TeleportPreviewMesh)
+		{
+			Segment->SetStaticMesh(TeleportPreviewMesh);
+		}
+
+		if (TeleportPreviewMaterial)
+		{
+			Segment->SetMaterial(0, TeleportPreviewMaterial);
+		}
+	}
+}
+
+void ASwitchableVRCharacter::EnsureTeleportPreviewSegmentCount(int32 SegmentCount)
+{
+	while (TeleportPreviewSegments.Num() < SegmentCount)
+	{
+		const int32 NewIndex = TeleportPreviewSegments.Num();
+		USplineMeshComponent* Segment = NewObject<USplineMeshComponent>(this, *FString::Printf(TEXT("TeleportPreviewSegment_%d"), NewIndex));
+		Segment->SetupAttachment(TeleportPreviewSpline);
+		Segment->SetMobility(EComponentMobility::Movable);
+		Segment->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Segment->SetGenerateOverlapEvents(false);
+		Segment->RegisterComponent();
+		TeleportPreviewSegments.Add(Segment);
+	}
+}
+
+void ASwitchableVRCharacter::ClearTeleportPreviewMesh()
+{
+	for (USplineMeshComponent* Segment : TeleportPreviewSegments)
+	{
+		if (Segment)
+		{
+			Segment->SetVisibility(false, true);
+			Segment->SetHiddenInGame(true);
+		}
+	}
 }
 
 void ASwitchableVRCharacter::UpdateTeleportAim()
@@ -244,6 +336,7 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 
 	if (!bHit)
 	{
+		ClearTeleportPreviewMesh();
 		return;
 	}
 
@@ -255,6 +348,7 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 		{
 			if (!NavSystem->ProjectPointToNavigation(Candidate, ProjectedLocation, TeleportProjectionExtent))
 			{
+				ClearTeleportPreviewMesh();
 				DrawDebugSphere(GetWorld(), Candidate, 20.0f, 12, FColor::Red, false, 0.0f);
 				return;
 			}

@@ -37,6 +37,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn")
 	void SwitchMode(ESwitchablePawnMode NewMode);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
+	void SetConstrainMovementToNavMesh(bool bNewConstrain);
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
 	bool TeleportToStartPoint(FName PointName);
 
@@ -57,6 +60,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn")
 	bool bDestroyInactivePawns = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
+	bool bConstrainMovementToNavMesh = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
@@ -111,6 +117,7 @@ private:
 	void ApplyModeTransition(ESwitchablePawnMode NewMode, ESwitchablePawnMode PreviousMode);
 	void SetWindowedMode();
 	void SetVRModeEnabled(bool bEnabled);
+	void ApplyMovementSettingsToPawn(ASwitchableBaseCharacter* SwitchablePawn) const;
 
 	ASwitchableBaseCharacter* GetOrCreatePawnForMode(ESwitchablePawnMode Mode, const FSwitchablePawnRuntimeState& RuntimeState);
 	TSubclassOf<ASwitchableBaseCharacter> GetPawnClassForMode(ESwitchablePawnMode Mode) const;

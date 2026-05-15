@@ -3,7 +3,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 
-ASwitchableFirstPersonCharacter::ASwitchableFirstPersonCharacter()
+ASwitchableFirstPersonCharacter::ASwitchableFirstPersonCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());

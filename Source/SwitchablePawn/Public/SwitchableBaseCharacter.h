@@ -11,7 +11,7 @@ class SWITCHABLEPAWN_API ASwitchableBaseCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	ASwitchableBaseCharacter();
+	ASwitchableBaseCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 
@@ -39,9 +39,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn")
 	virtual void SetSwitchableActive(bool bNewActive);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
+	virtual void SetConstrainMovementToNavMesh(bool bNewConstrain);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	float WalkSpeed = 500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	float JumpVelocity = 420.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
+	bool bConstrainMovementToNavMesh = false;
+
+protected:
+	void RefreshMovementModeForNavigation();
 };

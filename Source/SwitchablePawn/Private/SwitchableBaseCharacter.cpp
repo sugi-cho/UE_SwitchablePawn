@@ -1,8 +1,10 @@
 #include "SwitchableBaseCharacter.h"
 
+#include "SwitchableCharacterMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-ASwitchableBaseCharacter::ASwitchableBaseCharacter()
+ASwitchableBaseCharacter::ASwitchableBaseCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<USwitchableCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationPitch = false;
@@ -19,6 +21,8 @@ void ASwitchableBaseCharacter::BeginPlay()
 		Movement->MaxWalkSpeed = WalkSpeed;
 		Movement->JumpZVelocity = JumpVelocity;
 	}
+
+	RefreshMovementModeForNavigation();
 }
 
 void ASwitchableBaseCharacter::Move(const FVector2D& MoveValue)
@@ -84,6 +88,8 @@ void ASwitchableBaseCharacter::ApplyRuntimeState(const FSwitchablePawnRuntimeSta
 	{
 		Movement->Velocity = RuntimeState.Velocity;
 	}
+
+	RefreshMovementModeForNavigation();
 }
 
 void ASwitchableBaseCharacter::SetSwitchableActive(bool bNewActive)
@@ -91,4 +97,19 @@ void ASwitchableBaseCharacter::SetSwitchableActive(bool bNewActive)
 	SetActorHiddenInGame(!bNewActive);
 	SetActorEnableCollision(bNewActive);
 	SetActorTickEnabled(bNewActive);
+}
+
+void ASwitchableBaseCharacter::SetConstrainMovementToNavMesh(bool bNewConstrain)
+{
+	bConstrainMovementToNavMesh = bNewConstrain;
+	RefreshMovementModeForNavigation();
+}
+
+void ASwitchableBaseCharacter::RefreshMovementModeForNavigation()
+{
+	if (USwitchableCharacterMovementComponent* Movement = Cast<USwitchableCharacterMovementComponent>(GetCharacterMovement()))
+	{
+		Movement->SetNavMeshMovementEnabled(bConstrainMovementToNavMesh);
+		Movement->SetMovementMode(bConstrainMovementToNavMesh ? MOVE_NavWalking : MOVE_Walking);
+	}
 }
