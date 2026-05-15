@@ -2,6 +2,12 @@
 
 `SwitchablePawn` は、Play 中に FirstPerson / ThirdPerson / VR の Pawn を切り替えるための Unreal Engine Runtime Plugin です。
 
+## Author
+
+- Author: Hironori Sugino
+- Website: https://sugi.cc
+- Original Repository: https://github.com/sugi-cho/UE_SwitchablePawn
+
 ## 対象
 
 - Unreal Engine 5.7
