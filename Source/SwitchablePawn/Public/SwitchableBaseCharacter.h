@@ -5,6 +5,8 @@
 #include "SwitchablePawnTypes.h"
 #include "SwitchableBaseCharacter.generated.h"
 
+class ANavLinkProxy;
+
 UCLASS(Abstract, Blueprintable)
 class SWITCHABLEPAWN_API ASwitchableBaseCharacter : public ACharacter
 {
@@ -51,6 +53,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	bool bConstrainMovementToNavMesh = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement|NavLink")
+	bool bUseNavLinkProxyTraversal = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement|NavLink", meta = (ClampMin = 0.0))
+	float NavLinkActivationRadius = 120.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement|NavLink")
+	TArray<TObjectPtr<ANavLinkProxy>> NavLinkProxies;
+
 protected:
 	void RefreshMovementModeForNavigation();
+	bool TryTraverseNavLinkProxy(const FVector& MoveDirection);
 };

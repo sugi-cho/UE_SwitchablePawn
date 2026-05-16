@@ -10,6 +10,7 @@ public class SwitchablePawn : ModuleRules
 		{
 			"Core",
 			"CoreUObject",
+			"AIModule",
 			"Engine",
 			"EnhancedInput",
 			"HeadMountedDisplay",

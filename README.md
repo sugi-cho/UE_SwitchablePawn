@@ -62,6 +62,7 @@ Default Pawn は未設定、または Plugin 側の Pawn を指定します。
 
 `ASwitchablePlayerController` は開始時に `DefaultMode` の Pawn を生成して Possess します。
 NavMesh 制限は `ASwitchablePlayerController::bConstrainMovementToNavMesh` で全モード共通に切り替えます。
+NavMesh 制限時に `NavLinkProxy` で飛ばしたい場合は、`ASwitchableBaseCharacter::NavLinkProxies` にレベル上の `NavLinkProxy` を設定します。空ならワールド内を自動探索します。
 
 ## Level 設定
 
