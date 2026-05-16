@@ -120,6 +120,7 @@ public:
 	TObjectPtr<USplineComponent> TeleportPreviewSpline;
 
 private:
+	void UpdateVRRootOffset();
 	void RefreshTeleportPreview();
 	void RefreshTeleportPreviewMesh(const TArray<FVector>& Points);
 	void EnsureTeleportPreviewSegmentCount(int32 SegmentCount);

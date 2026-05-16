@@ -61,11 +61,15 @@ ASwitchableVRCharacter::ASwitchableVRCharacter(const FObjectInitializer& ObjectI
 	TeleportPreviewSpline->SetupAttachment(VRRoot);
 	TeleportPreviewSpline->SetHiddenInGame(true);
 	TeleportPreviewSpline->SetVisibility(true);
+
+	UpdateVRRootOffset();
 }
 
 void ASwitchableVRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UpdateVRRootOffset();
 
 	if (HandSkeletalMesh)
 	{
@@ -77,6 +81,7 @@ void ASwitchableVRCharacter::BeginPlay()
 void ASwitchableVRCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+	UpdateVRRootOffset();
 	RefreshTeleportPreview();
 }
 
@@ -84,6 +89,7 @@ void ASwitchableVRCharacter::OnConstruction(const FTransform& Transform)
 void ASwitchableVRCharacter::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+	UpdateVRRootOffset();
 	RefreshTeleportPreview();
 }
 #endif
@@ -115,9 +121,26 @@ void ASwitchableVRCharacter::Move(const FVector2D& MoveValue)
 	const FRotator CameraYaw(0.0f, VRCamera ? VRCamera->GetComponentRotation().Yaw : GetActorRotation().Yaw, 0.0f);
 	const FVector Forward = FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::Y);
+	const FVector MoveDirection = (Forward * MoveValue.Y) + (Right * MoveValue.X);
+
+	if (bConstrainMovementToNavMesh && TryTraverseNavLinkProxy(MoveDirection))
+	{
+		return;
+	}
 
 	AddMovementInput(Forward, MoveValue.Y);
 	AddMovementInput(Right, MoveValue.X);
+}
+
+void ASwitchableVRCharacter::UpdateVRRootOffset()
+{
+	if (!VRRoot)
+	{
+		return;
+	}
+
+	const float CapsuleHalfHeight = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 0.0f;
+	VRRoot->SetRelativeLocation(FVector(0.0f, 0.0f, -CapsuleHalfHeight));
 }
 
 void ASwitchableVRCharacter::Look(const FVector2D& LookValue)
