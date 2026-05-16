@@ -140,7 +140,7 @@ ThirdPerson の body mesh、VR の hand mesh は Plugin 内にコピーしませ
 - FirstPerson / ThirdPerson の移動と Jump
 - `ASwitchablePlayerController` の `bConstrainMovementToNavMesh` による全モード移動の NavMesh 制限
 - `ASwitchableVRCharacter` の teleport ray は既定で赤/緑のデバッグ表示
-- `TeleportPreviewMesh` / `TeleportPreviewMaterial` は任意の見た目変更用
+- `TeleportPreviewMesh` / `TeleportPreviewMaterial` / `TeleportPreviewValidMaterial` は任意の見た目変更用
 - VR の HMD Camera / MotionController / Hand mesh slot
 - VR line trace teleport
 - NavMesh projection による teleport destination 判定

@@ -250,6 +250,7 @@ void ASwitchableVRCharacter::RefreshTeleportPreviewMesh(const TArray<FVector>& P
 		return;
 	}
 
+	UMaterialInterface* PreviewMaterial = bHasValidTeleportDestination ? TeleportPreviewValidMaterial.Get() : TeleportPreviewMaterial.Get();
 	EnsureTeleportPreviewSegmentCount(FMath::Max(0, Points.Num() - 1));
 
 	for (int32 SegmentIndex = 0; SegmentIndex < TeleportPreviewSegments.Num(); ++SegmentIndex)
@@ -282,9 +283,9 @@ void ASwitchableVRCharacter::RefreshTeleportPreviewMesh(const TArray<FVector>& P
 			Segment->SetStaticMesh(TeleportPreviewMesh);
 		}
 
-		if (TeleportPreviewMaterial)
+		if (PreviewMaterial)
 		{
-			Segment->SetMaterial(0, TeleportPreviewMaterial);
+			Segment->SetMaterial(0, PreviewMaterial);
 		}
 	}
 }
@@ -336,13 +337,14 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 	FVector CurrentVelocity = Velocity;
 	bool bHit = false;
 	FHitResult Hit;
+	TArray<TPair<FVector, FVector>> LineSegments;
 
 	for (float Time = 0.0f; Time <= TeleportArcMaxTime; Time += TeleportArcTimeStep)
 	{
 		CurrentVelocity += Gravity * TeleportArcTimeStep;
 		const FVector NextPosition = CurrentPosition + CurrentVelocity * TeleportArcTimeStep;
 		bHit = GetWorld()->LineTraceSingleByChannel(Hit, CurrentPosition, NextPosition, ECC_Visibility, Params);
-		DrawDebugLine(GetWorld(), CurrentPosition, bHit ? Hit.ImpactPoint : NextPosition, bHit ? FColor::Green : FColor::Red, false, 0.0f, 0, 2.0f);
+		LineSegments.Emplace(CurrentPosition, bHit ? Hit.ImpactPoint : NextPosition);
 
 		if (bHit)
 		{
@@ -355,6 +357,12 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 		{
 			break;
 		}
+	}
+
+	const FColor DebugColor = bHit ? FColor::Green : FColor::Red;
+	for (const TPair<FVector, FVector>& Segment : LineSegments)
+	{
+		DrawDebugLine(GetWorld(), Segment.Key, Segment.Value, DebugColor, false, 0.0f, 0, 2.0f);
 	}
 
 	if (!bHit)
@@ -395,7 +403,7 @@ bool ASwitchableVRCharacter::ConfirmTeleport()
 
 	const float CapsuleHalfHeight = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 0.0f;
 	const FVector TargetLocation = TeleportDestination + FVector(0.0f, 0.0f, CapsuleHalfHeight);
-	const FRotator TargetRotation(0.0f, VRCamera ? VRCamera->GetComponentRotation().Yaw : GetActorRotation().Yaw, 0.0f);
+	const FRotator TargetRotation(0.0f, GetActorRotation().Yaw, 0.0f);
 
 	const bool bTeleported = TeleportTo(TargetLocation, TargetRotation, false, true);
 	CancelTeleportAim();

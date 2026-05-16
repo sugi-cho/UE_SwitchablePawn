@@ -107,6 +107,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
 	TObjectPtr<UMaterialInterface> TeleportPreviewMaterial = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
+	TObjectPtr<UMaterialInterface> TeleportPreviewValidMaterial = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview", meta = (ClampMin = 0.001))
 	float TeleportPreviewRadius = 0.025f;
 
