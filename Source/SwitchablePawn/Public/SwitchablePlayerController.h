@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
 #include "SwitchablePawnTypes.h"
 #include "SwitchablePlayerController.generated.h"
 
@@ -37,6 +38,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn")
 	void SwitchMode(ESwitchablePawnMode NewMode);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Switchable Pawn")
+	void OnModeWillChange(ESwitchablePawnMode PreviousMode, ESwitchablePawnMode NewMode, APawn* PreviousPawn, ASwitchableBaseCharacter* NewPawn);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Switchable Pawn")
+	void OnModeChanged(ESwitchablePawnMode PreviousMode, ESwitchablePawnMode NewMode, APawn* PreviousPawn, ASwitchableBaseCharacter* NewPawn);
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
 	void SetConstrainMovementToNavMesh(bool bNewConstrain);
 
@@ -69,6 +76,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	int32 InputMappingPriority = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
+	bool bEnableModeSwitchKeys = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input", meta = (EditCondition = "bEnableModeSwitchKeys"))
+	FKey SwitchFirstPersonKey = EKeys::One;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input", meta = (EditCondition = "bEnableModeSwitchKeys"))
+	FKey SwitchThirdPersonKey = EKeys::Two;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input", meta = (EditCondition = "bEnableModeSwitchKeys"))
+	FKey SwitchVRKey = EKeys::Three;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;

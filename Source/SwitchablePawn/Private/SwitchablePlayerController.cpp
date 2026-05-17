@@ -109,6 +109,7 @@ void ASwitchablePlayerController::SwitchToVR()
 void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 {
 	APawn* PreviousPawn = GetPawn();
+	const ESwitchablePawnMode PreviousMode = CurrentMode;
 	FSwitchablePawnRuntimeState RuntimeState = BuildInitialRuntimeState();
 
 	const bool bPreviousPawnIsManaged =
@@ -135,7 +136,8 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 		return;
 	}
 
-	ApplyModeTransition(NewMode, CurrentMode);
+	OnModeWillChange(PreviousMode, NewMode, PreviousPawn, NewPawn);
+	ApplyModeTransition(NewMode, PreviousMode);
 
 	if (PreviousPawn && PreviousPawn != NewPawn)
 	{
@@ -155,6 +157,7 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 	Possess(NewPawn);
 	NewPawn->ApplyRuntimeState(RuntimeState);
 	CurrentMode = NewMode;
+	OnModeChanged(PreviousMode, NewMode, PreviousPawn, NewPawn);
 
 	if (bDestroyInactivePawns && PreviousPawn && PreviousPawn != NewPawn)
 	{
@@ -362,9 +365,21 @@ void ASwitchablePlayerController::AddDefaultMappings()
 	InputMappingContext->MapKey(MoveAction, EKeys::ValveIndex_Right_Thumbstick_2D);
 	InputMappingContext->MapKey(MoveAction, EKeys::MixedReality_Left_Thumbstick_2D);
 	InputMappingContext->MapKey(MoveAction, EKeys::MixedReality_Right_Thumbstick_2D);
-	InputMappingContext->MapKey(SwitchFirstPersonAction, EKeys::One);
-	InputMappingContext->MapKey(SwitchThirdPersonAction, EKeys::Two);
-	InputMappingContext->MapKey(SwitchVRAction, EKeys::Three);
+	if (bEnableModeSwitchKeys)
+	{
+		if (SwitchFirstPersonKey.IsValid())
+		{
+			InputMappingContext->MapKey(SwitchFirstPersonAction, SwitchFirstPersonKey);
+		}
+		if (SwitchThirdPersonKey.IsValid())
+		{
+			InputMappingContext->MapKey(SwitchThirdPersonAction, SwitchThirdPersonKey);
+		}
+		if (SwitchVRKey.IsValid())
+		{
+			InputMappingContext->MapKey(SwitchVRAction, SwitchVRKey);
+		}
+	}
 	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::OculusTouch_Left_Trigger_Click);
 	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::ValveIndex_Left_Trigger_Click);
 	InputMappingContext->MapKey(VRTeleportAimLeftAction, EKeys::MixedReality_Left_Trigger_Click);

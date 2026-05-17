@@ -95,6 +95,14 @@ TeleportToStartPointByIndex(0);
 - `RightMouseButton`: VR teleport aim / confirm
 - `Gamepad_RightTrigger`: VR teleport confirm
 
+`BP_SwitchablePlayerController` では次を変更できます。
+
+- `bEnableModeSwitchKeys`: `1/2/3` のモード切替キーをまとめて無効化
+- `SwitchFirstPersonKey`
+- `SwitchThirdPersonKey`
+- `SwitchVRKey`
+- `OnModeWillChange` / `OnModeChanged`: モード変更前後の独自処理
+
 VR へ切り替える時は HMD / stereo を有効化し、VR から FirstPerson / ThirdPerson に戻る時は Windowed に戻します。
 
 プロジェクト側で独自の `InputMappingContext` / `InputAction` を指定することもできます。
