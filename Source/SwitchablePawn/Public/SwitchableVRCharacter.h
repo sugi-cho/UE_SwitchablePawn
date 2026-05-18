@@ -113,6 +113,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview", meta = (ClampMin = 0.001))
 	float TeleportPreviewRadius = 0.025f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Auto Turn", meta = (ClampMin = 0.0))
+	float TeleportAutoTurnStartDelay = 0.35f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Auto Turn", meta = (ClampMin = 0.0))
+	float TeleportAutoTurnStartAngle = 18.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Auto Turn", meta = (ClampMin = 0.0))
+	float TeleportAutoTurnStopAngle = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Auto Turn", meta = (ClampMin = 0.0))
+	float TeleportAutoTurnSpeed = 120.0f;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Switchable Pawn|VR")
 	bool bHasValidTeleportDestination = false;
 
@@ -124,6 +136,8 @@ public:
 
 private:
 	void UpdateVRRootOffset();
+	void UpdateTeleportAutoTurn(float DeltaSeconds);
+	float GetTeleportAimYawDelta() const;
 	void RefreshTeleportPreview();
 	void RefreshTeleportPreviewMesh(const TArray<FVector>& Points);
 	void EnsureTeleportPreviewSegmentCount(int32 SegmentCount);
@@ -132,6 +146,7 @@ private:
 	FRotator GetTeleportTraceRotation(const UMotionControllerComponent* TraceController) const;
 
 	bool bTeleportAiming = false;
+	float TeleportAutoTurnElapsed = 0.0f;
 	TObjectPtr<UMotionControllerComponent> TeleportTraceController = nullptr;
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<USplineMeshComponent>> TeleportPreviewSegments;

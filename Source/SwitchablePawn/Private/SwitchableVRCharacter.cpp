@@ -100,6 +100,7 @@ void ASwitchableVRCharacter::Tick(float DeltaSeconds)
 
 	if (bTeleportAiming)
 	{
+		UpdateTeleportAutoTurn(DeltaSeconds);
 		UpdateTeleportAim();
 	}
 
@@ -157,6 +158,7 @@ void ASwitchableVRCharacter::BeginTeleportAim(bool bUseLeftHand)
 {
 	TeleportTraceController = bUseLeftHand ? LeftController : RightController;
 	bTeleportAiming = true;
+	TeleportAutoTurnElapsed = 0.0f;
 	UpdateTeleportAim();
 }
 
@@ -178,6 +180,63 @@ FRotator ASwitchableVRCharacter::GetTeleportTraceRotation(const UMotionControlle
 	}
 
 	return (TraceController->GetComponentRotation() + TeleportTraceRotationOffset).GetNormalized();
+}
+
+float ASwitchableVRCharacter::GetTeleportAimYawDelta() const
+{
+	const UMotionControllerComponent* TraceController = TeleportTraceController ? TeleportTraceController.Get() : RightController.Get();
+	if (!TraceController || !VRCamera)
+	{
+		return 0.0f;
+	}
+
+	const float CameraYaw = VRCamera->GetComponentRotation().Yaw;
+	const float TraceYaw = GetTeleportTraceRotation(TraceController).Yaw;
+	return FMath::FindDeltaAngleDegrees(CameraYaw, TraceYaw);
+}
+
+void ASwitchableVRCharacter::UpdateTeleportAutoTurn(float DeltaSeconds)
+{
+	if (!bTeleportAiming)
+	{
+		TeleportAutoTurnElapsed = 0.0f;
+		return;
+	}
+
+	const float YawDelta = GetTeleportAimYawDelta();
+	if (FMath::Abs(YawDelta) < TeleportAutoTurnStartAngle)
+	{
+		TeleportAutoTurnElapsed = 0.0f;
+		return;
+	}
+
+	TeleportAutoTurnElapsed += DeltaSeconds;
+	if (TeleportAutoTurnElapsed < TeleportAutoTurnStartDelay)
+	{
+		return;
+	}
+
+	if (FMath::Abs(YawDelta) <= TeleportAutoTurnStopAngle)
+	{
+		return;
+	}
+
+	const float MaxStep = TeleportAutoTurnSpeed * DeltaSeconds;
+	const float Step = FMath::Clamp(YawDelta, -MaxStep, MaxStep);
+	if (FMath::IsNearlyZero(Step))
+	{
+		return;
+	}
+
+	const FRotator NewRotation = (GetActorRotation() + FRotator(0.0f, Step, 0.0f)).GetNormalized();
+	SetActorRotation(NewRotation);
+
+	if (Controller)
+	{
+		FRotator ControlRotation = Controller->GetControlRotation();
+		ControlRotation.Yaw = NewRotation.Yaw;
+		Controller->SetControlRotation(ControlRotation);
+	}
 }
 
 void ASwitchableVRCharacter::RefreshTeleportPreview()
@@ -414,6 +473,7 @@ void ASwitchableVRCharacter::CancelTeleportAim()
 {
 	bTeleportAiming = false;
 	bHasValidTeleportDestination = false;
+	TeleportAutoTurnElapsed = 0.0f;
 	TeleportTraceController = nullptr;
 	RefreshTeleportPreview();
 }
