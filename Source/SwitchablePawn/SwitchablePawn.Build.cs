@@ -16,6 +16,7 @@ public class SwitchablePawn : ModuleRules
 			"HeadMountedDisplay",
 			"InputCore",
 			"NavigationSystem",
+			"UMG",
 			"XRBase"
 		});
 	}

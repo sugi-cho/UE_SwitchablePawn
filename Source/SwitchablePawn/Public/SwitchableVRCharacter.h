@@ -1,11 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputCoreTypes.h"
 #include "SwitchableBaseCharacter.h"
 #include "SwitchableVRCharacter.generated.h"
 
 class UCameraComponent;
 class UMotionControllerComponent;
+class UWidgetInteractionComponent;
 class USkeletalMesh;
 class USkeletalMeshComponent;
 class UMaterialInterface;
@@ -62,6 +64,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|VR")
 	TObjectPtr<USkeletalMeshComponent> RightHandMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|VR|Interaction")
+	TObjectPtr<UWidgetInteractionComponent> LeftWidgetInteraction;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|VR|Interaction")
+	TObjectPtr<UWidgetInteractionComponent> RightWidgetInteraction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	TObjectPtr<USkeletalMesh> HandSkeletalMesh = nullptr;
 
@@ -113,6 +121,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview", meta = (ClampMin = 0.001))
 	float TeleportPreviewRadius = 0.025f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Interaction")
+	bool bEnableWidgetInteraction = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Interaction", meta = (ClampMin = 0.0))
+	float WidgetInteractionDistance = 1200.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Interaction")
+	FKey WidgetInteractionPointerKey = EKeys::LeftMouseButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Interaction")
+	bool bPreferWidgetInteractionOverTeleport = true;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Auto Turn", meta = (ClampMin = 0.0))
 	float TeleportAutoTurnStartDelay = 0.35f;
 
@@ -138,6 +158,12 @@ private:
 	void UpdateVRRootOffset();
 	void UpdateTeleportAutoTurn(float DeltaSeconds);
 	float GetTeleportAimYawDelta() const;
+	UWidgetInteractionComponent* GetWidgetInteractionComponent(bool bUseLeftHand) const;
+	UMotionControllerComponent* GetTeleportTraceController(bool bUseLeftHand) const;
+	bool IsWidgetTargeted(bool bUseLeftHand) const;
+	void SetWidgetInteractionPressed(bool bUseLeftHand, bool bPressed);
+	void RefreshWidgetInteractionSettings();
+	void SetWidgetInteractionActive(bool bUseLeftHand, bool bActive);
 	void RefreshTeleportPreview();
 	void RefreshTeleportPreviewMesh(const TArray<FVector>& Points);
 	void EnsureTeleportPreviewSegmentCount(int32 SegmentCount);
@@ -146,8 +172,12 @@ private:
 	FRotator GetTeleportTraceRotation(const UMotionControllerComponent* TraceController) const;
 
 	bool bTeleportAiming = false;
+	bool bWidgetInteractionAiming = false;
+	bool bWidgetPointerPressed = false;
 	float TeleportAutoTurnElapsed = 0.0f;
 	TObjectPtr<UMotionControllerComponent> TeleportTraceController = nullptr;
+	UPROPERTY(Transient)
+	TObjectPtr<UWidgetInteractionComponent> ActiveWidgetInteraction = nullptr;
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<USplineMeshComponent>> TeleportPreviewSegments;
 };

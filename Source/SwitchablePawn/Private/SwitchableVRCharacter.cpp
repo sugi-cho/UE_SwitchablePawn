@@ -5,6 +5,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
+#include "Components/WidgetInteractionComponent.h"
 #include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "MotionControllerComponent.h"
@@ -57,6 +58,14 @@ ASwitchableVRCharacter::ASwitchableVRCharacter(const FObjectInitializer& ObjectI
 	RightHandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RightHandMesh->SetGenerateOverlapEvents(false);
 
+	LeftWidgetInteraction = CreateDefaultSubobject<UWidgetInteractionComponent>(TEXT("LeftWidgetInteraction"));
+	LeftWidgetInteraction->SetupAttachment(LeftController);
+	LeftWidgetInteraction->InteractionDistance = WidgetInteractionDistance;
+
+	RightWidgetInteraction = CreateDefaultSubobject<UWidgetInteractionComponent>(TEXT("RightWidgetInteraction"));
+	RightWidgetInteraction->SetupAttachment(RightController);
+	RightWidgetInteraction->InteractionDistance = WidgetInteractionDistance;
+
 	TeleportPreviewSpline = CreateDefaultSubobject<USplineComponent>(TEXT("TeleportPreviewSpline"));
 	TeleportPreviewSpline->SetupAttachment(VRRoot);
 	TeleportPreviewSpline->SetHiddenInGame(true);
@@ -70,6 +79,7 @@ void ASwitchableVRCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateVRRootOffset();
+	RefreshWidgetInteractionSettings();
 
 	if (HandSkeletalMesh)
 	{
@@ -82,6 +92,7 @@ void ASwitchableVRCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	UpdateVRRootOffset();
+	RefreshWidgetInteractionSettings();
 	RefreshTeleportPreview();
 }
 
@@ -90,6 +101,7 @@ void ASwitchableVRCharacter::PostEditChangeProperty(FPropertyChangedEvent& Prope
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	UpdateVRRootOffset();
+	RefreshWidgetInteractionSettings();
 	RefreshTeleportPreview();
 }
 #endif
@@ -154,11 +166,111 @@ void ASwitchableVRCharacter::Look(const FVector2D& LookValue)
 	AddControllerYawInput(LookValue.X);
 }
 
+UWidgetInteractionComponent* ASwitchableVRCharacter::GetWidgetInteractionComponent(bool bUseLeftHand) const
+{
+	return bUseLeftHand ? LeftWidgetInteraction.Get() : RightWidgetInteraction.Get();
+}
+
+UMotionControllerComponent* ASwitchableVRCharacter::GetTeleportTraceController(bool bUseLeftHand) const
+{
+	return bUseLeftHand ? LeftController.Get() : RightController.Get();
+}
+
+bool ASwitchableVRCharacter::IsWidgetTargeted(bool bUseLeftHand) const
+{
+	const UWidgetInteractionComponent* WidgetInteraction = GetWidgetInteractionComponent(bUseLeftHand);
+	return bEnableWidgetInteraction && WidgetInteraction && WidgetInteraction->GetHoveredWidgetComponent();
+}
+
+void ASwitchableVRCharacter::SetWidgetInteractionPressed(bool bUseLeftHand, bool bPressed)
+{
+	UWidgetInteractionComponent* WidgetInteraction = GetWidgetInteractionComponent(bUseLeftHand);
+	if (!WidgetInteraction || !bEnableWidgetInteraction)
+	{
+		return;
+	}
+
+	if (bPressed)
+	{
+		WidgetInteraction->PressPointerKey(WidgetInteractionPointerKey);
+		bWidgetPointerPressed = true;
+		return;
+	}
+
+	if (bWidgetPointerPressed)
+	{
+		WidgetInteraction->ReleasePointerKey(WidgetInteractionPointerKey);
+	}
+
+	bWidgetPointerPressed = false;
+}
+
+void ASwitchableVRCharacter::SetWidgetInteractionActive(bool bUseLeftHand, bool bActive)
+{
+	UWidgetInteractionComponent* WidgetInteraction = GetWidgetInteractionComponent(bUseLeftHand);
+	if (!WidgetInteraction)
+	{
+		return;
+	}
+
+	WidgetInteraction->InteractionDistance = WidgetInteractionDistance;
+	if (bActive && bEnableWidgetInteraction)
+	{
+		ActiveWidgetInteraction = WidgetInteraction;
+	}
+	else if (ActiveWidgetInteraction == WidgetInteraction)
+	{
+		ActiveWidgetInteraction = nullptr;
+	}
+}
+
+void ASwitchableVRCharacter::RefreshWidgetInteractionSettings()
+{
+	ActiveWidgetInteraction = nullptr;
+
+	if (!bEnableWidgetInteraction)
+	{
+		return;
+	}
+
+	WidgetInteractionDistance = FMath::Max(0.0f, WidgetInteractionDistance);
+	SetWidgetInteractionActive(true, true);
+	SetWidgetInteractionActive(false, true);
+}
+
 void ASwitchableVRCharacter::BeginTeleportAim(bool bUseLeftHand)
 {
-	TeleportTraceController = bUseLeftHand ? LeftController : RightController;
-	bTeleportAiming = true;
+	TeleportTraceController = GetTeleportTraceController(bUseLeftHand);
+	bTeleportAiming = false;
+	bWidgetInteractionAiming = false;
 	TeleportAutoTurnElapsed = 0.0f;
+
+	if (bEnableWidgetInteraction && IsWidgetTargeted(bUseLeftHand))
+	{
+		bWidgetInteractionAiming = true;
+		ActiveWidgetInteraction = GetWidgetInteractionComponent(bUseLeftHand);
+		SetWidgetInteractionPressed(bUseLeftHand, true);
+		ClearTeleportPreviewMesh();
+		bHasValidTeleportDestination = false;
+		return;
+	}
+
+	if (bEnableWidgetInteraction && bPreferWidgetInteractionOverTeleport)
+	{
+		UWidgetInteractionComponent* WidgetInteraction = GetWidgetInteractionComponent(bUseLeftHand);
+		if (WidgetInteraction && WidgetInteraction->GetHoveredWidgetComponent())
+		{
+			bWidgetInteractionAiming = true;
+			ActiveWidgetInteraction = WidgetInteraction;
+			SetWidgetInteractionPressed(bUseLeftHand, true);
+			ClearTeleportPreviewMesh();
+			bHasValidTeleportDestination = false;
+			return;
+		}
+	}
+
+	bTeleportAiming = true;
+	ActiveWidgetInteraction = nullptr;
 	UpdateTeleportAim();
 }
 
@@ -454,6 +566,14 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 
 bool ASwitchableVRCharacter::ConfirmTeleport()
 {
+	if (bWidgetInteractionAiming)
+	{
+		const bool bHadPress = bWidgetPointerPressed;
+		SetWidgetInteractionPressed(ActiveWidgetInteraction == LeftWidgetInteraction, false);
+		CancelTeleportAim();
+		return bHadPress;
+	}
+
 	if (!bHasValidTeleportDestination)
 	{
 		CancelTeleportAim();
@@ -471,9 +591,17 @@ bool ASwitchableVRCharacter::ConfirmTeleport()
 
 void ASwitchableVRCharacter::CancelTeleportAim()
 {
+	const bool bUseLeftHand = ActiveWidgetInteraction == LeftWidgetInteraction;
+
 	bTeleportAiming = false;
+	bWidgetInteractionAiming = false;
 	bHasValidTeleportDestination = false;
 	TeleportAutoTurnElapsed = 0.0f;
 	TeleportTraceController = nullptr;
+	if (bEnableWidgetInteraction)
+	{
+		SetWidgetInteractionPressed(bUseLeftHand, false);
+	}
 	RefreshTeleportPreview();
+	RefreshWidgetInteractionSettings();
 }
