@@ -47,6 +47,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
 	void SetConstrainMovementToNavMesh(bool bNewConstrain);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
+	void SetAffectedByGravity(bool bNewAffectedByGravity);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Movement")
+	bool IsAffectedByGravity() const { return bAffectedByGravity; }
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|VR")
 	void SetVRTeleportMovementEnabled(bool bNewEnabled);
 
@@ -88,6 +94,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	bool bConstrainMovementToNavMesh = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
+	bool bAffectedByGravity = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	bool bEnableVRTeleportMovement = true;
@@ -164,6 +173,7 @@ private:
 	void SetWindowedMode();
 	void SetVRModeEnabled(bool bEnabled);
 	void ApplyMovementSettingsToPawn(ASwitchableBaseCharacter* SwitchablePawn) const;
+	void ApplyMovementSettingsToAllPawns() const;
 	void ApplyVRSettingsToPawn(ASwitchableVRCharacter* SwitchableVRPawn) const;
 
 	ASwitchableBaseCharacter* GetOrCreatePawnForMode(ESwitchablePawnMode Mode, const FSwitchablePawnRuntimeState& RuntimeState);

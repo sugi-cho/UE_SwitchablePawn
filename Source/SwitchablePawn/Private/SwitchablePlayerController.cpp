@@ -169,7 +169,17 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 void ASwitchablePlayerController::SetConstrainMovementToNavMesh(bool bNewConstrain)
 {
 	bConstrainMovementToNavMesh = bNewConstrain;
+	ApplyMovementSettingsToAllPawns();
+}
 
+void ASwitchablePlayerController::SetAffectedByGravity(bool bNewAffectedByGravity)
+{
+	bAffectedByGravity = bNewAffectedByGravity;
+	ApplyMovementSettingsToAllPawns();
+}
+
+void ASwitchablePlayerController::ApplyMovementSettingsToAllPawns() const
+{
 	ApplyMovementSettingsToPawn(Cast<ASwitchableBaseCharacter>(GetPawn()));
 	if (IsValid(FirstPersonPawn))
 	{
@@ -559,6 +569,7 @@ void ASwitchablePlayerController::ApplyMovementSettingsToPawn(ASwitchableBaseCha
 	if (SwitchablePawn)
 	{
 		SwitchablePawn->SetConstrainMovementToNavMesh(bConstrainMovementToNavMesh);
+		SwitchablePawn->SetAffectedByGravity(bAffectedByGravity);
 	}
 }
 

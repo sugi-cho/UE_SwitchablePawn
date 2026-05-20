@@ -44,6 +44,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
 	virtual void SetConstrainMovementToNavMesh(bool bNewConstrain);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
+	virtual void SetAffectedByGravity(bool bNewAffectedByGravity);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	float WalkSpeed = 500.0f;
 
@@ -52,6 +55,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	bool bConstrainMovementToNavMesh = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
+	bool bAffectedByGravity = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement|NavLink")
 	bool bUseNavLinkProxyTraversal = true;

@@ -115,12 +115,19 @@ void ASwitchableBaseCharacter::SetConstrainMovementToNavMesh(bool bNewConstrain)
 	RefreshMovementModeForNavigation();
 }
 
+void ASwitchableBaseCharacter::SetAffectedByGravity(bool bNewAffectedByGravity)
+{
+	bAffectedByGravity = bNewAffectedByGravity;
+	RefreshMovementModeForNavigation();
+}
+
 void ASwitchableBaseCharacter::RefreshMovementModeForNavigation()
 {
 	if (USwitchableCharacterMovementComponent* Movement = Cast<USwitchableCharacterMovementComponent>(GetCharacterMovement()))
 	{
-		Movement->SetNavMeshMovementEnabled(bConstrainMovementToNavMesh);
-		Movement->SetMovementMode(bConstrainMovementToNavMesh ? MOVE_NavWalking : MOVE_Walking);
+		Movement->GravityScale = bAffectedByGravity ? 1.0f : 0.0f;
+		Movement->SetNavMeshMovementEnabled(bAffectedByGravity && bConstrainMovementToNavMesh);
+		Movement->SetMovementMode(!bAffectedByGravity ? MOVE_Flying : (bConstrainMovementToNavMesh ? MOVE_NavWalking : MOVE_Walking));
 	}
 }
 
