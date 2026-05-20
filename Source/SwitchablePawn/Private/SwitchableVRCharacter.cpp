@@ -269,9 +269,35 @@ void ASwitchableVRCharacter::BeginTeleportAim(bool bUseLeftHand)
 		}
 	}
 
+	if (!bEnableTeleportMovement)
+	{
+		ClearTeleportPreviewMesh();
+		bHasValidTeleportDestination = false;
+		ActiveWidgetInteraction = nullptr;
+		TeleportTraceController = nullptr;
+		return;
+	}
+
 	bTeleportAiming = true;
 	ActiveWidgetInteraction = nullptr;
 	UpdateTeleportAim();
+}
+
+void ASwitchableVRCharacter::SetTeleportMovementEnabled(bool bNewEnabled)
+{
+	bEnableTeleportMovement = bNewEnabled;
+
+	if (!bEnableTeleportMovement && bTeleportAiming)
+	{
+		CancelTeleportAim();
+		return;
+	}
+
+	if (!bEnableTeleportMovement)
+	{
+		ClearTeleportPreviewMesh();
+		bHasValidTeleportDestination = false;
+	}
 }
 
 FVector ASwitchableVRCharacter::GetTeleportTraceStartLocation(const UMotionControllerComponent* TraceController) const
@@ -353,6 +379,12 @@ void ASwitchableVRCharacter::UpdateTeleportAutoTurn(float DeltaSeconds)
 
 void ASwitchableVRCharacter::RefreshTeleportPreview()
 {
+	if (!bEnableTeleportMovement)
+	{
+		ClearTeleportPreviewMesh();
+		return;
+	}
+
 	if (!TeleportPreviewSpline || !GetWorld())
 	{
 		return;
@@ -492,6 +524,12 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 {
 	bHasValidTeleportDestination = false;
 
+	if (!bEnableTeleportMovement)
+	{
+		ClearTeleportPreviewMesh();
+		return;
+	}
+
 	const UMotionControllerComponent* TraceController = TeleportTraceController ? TeleportTraceController.Get() : RightController.Get();
 	if (!TraceController || !GetWorld())
 	{
@@ -575,6 +613,12 @@ bool ASwitchableVRCharacter::ConfirmTeleport()
 	}
 
 	if (!bHasValidTeleportDestination)
+	{
+		CancelTeleportAim();
+		return false;
+	}
+
+	if (!bEnableTeleportMovement)
 	{
 		CancelTeleportAim();
 		return false;

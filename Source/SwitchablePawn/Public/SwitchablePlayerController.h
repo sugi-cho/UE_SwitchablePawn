@@ -47,6 +47,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Movement")
 	void SetConstrainMovementToNavMesh(bool bNewConstrain);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|VR")
+	void SetVRTeleportMovementEnabled(bool bNewEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|VR")
+	bool IsVRTeleportMovementEnabled() const { return bEnableVRTeleportMovement; }
+
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Input")
+	void SetMovementInputEnabled(bool bNewEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Input")
+	bool IsMovementInputEnabled() const { return bEnableMovementInput; }
+
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Input")
+	void SetLookInputEnabled(bool bNewEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Input")
+	bool IsLookInputEnabled() const { return bEnableLookInput; }
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
 	bool TeleportToStartPoint(FName PointName);
 
@@ -71,6 +89,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Movement")
 	bool bConstrainMovementToNavMesh = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
+	bool bEnableVRTeleportMovement = true;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
@@ -79,6 +100,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
 	bool bEnableModeSwitchKeys = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
+	bool bEnableMovementInput = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input")
+	bool bEnableLookInput = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Input", meta = (EditCondition = "bEnableModeSwitchKeys"))
 	FKey SwitchFirstPersonKey = EKeys::One;
@@ -137,6 +164,7 @@ private:
 	void SetWindowedMode();
 	void SetVRModeEnabled(bool bEnabled);
 	void ApplyMovementSettingsToPawn(ASwitchableBaseCharacter* SwitchablePawn) const;
+	void ApplyVRSettingsToPawn(ASwitchableVRCharacter* SwitchableVRPawn) const;
 
 	ASwitchableBaseCharacter* GetOrCreatePawnForMode(ESwitchablePawnMode Mode, const FSwitchablePawnRuntimeState& RuntimeState);
 	TSubclassOf<ASwitchableBaseCharacter> GetPawnClassForMode(ESwitchablePawnMode Mode) const;

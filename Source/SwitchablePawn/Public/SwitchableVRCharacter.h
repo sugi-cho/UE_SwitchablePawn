@@ -46,6 +46,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|VR")
 	void CancelTeleportAim();
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|VR")
+	void SetTeleportMovementEnabled(bool bNewEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|VR")
+	bool IsTeleportMovementEnabled() const { return bEnableTeleportMovement; }
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|VR")
 	TObjectPtr<USceneComponent> VRRoot;
 
@@ -72,6 +78,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	TObjectPtr<USkeletalMesh> HandSkeletalMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
+	bool bEnableTeleportMovement = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	float TeleportTraceDistance = 1200.0f;

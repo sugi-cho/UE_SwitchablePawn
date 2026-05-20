@@ -154,6 +154,7 @@ void ASwitchablePlayerController::SwitchMode(ESwitchablePawnMode NewMode)
 
 	NewPawn->SetSwitchableActive(true);
 	ApplyMovementSettingsToPawn(NewPawn);
+	ApplyVRSettingsToPawn(Cast<ASwitchableVRCharacter>(NewPawn));
 	Possess(NewPawn);
 	NewPawn->ApplyRuntimeState(RuntimeState);
 	CurrentMode = NewMode;
@@ -182,6 +183,27 @@ void ASwitchablePlayerController::SetConstrainMovementToNavMesh(bool bNewConstra
 	{
 		ApplyMovementSettingsToPawn(VRPawn);
 	}
+}
+
+void ASwitchablePlayerController::SetVRTeleportMovementEnabled(bool bNewEnabled)
+{
+	bEnableVRTeleportMovement = bNewEnabled;
+
+	ApplyVRSettingsToPawn(Cast<ASwitchableVRCharacter>(GetPawn()));
+	if (IsValid(VRPawn))
+	{
+		ApplyVRSettingsToPawn(Cast<ASwitchableVRCharacter>(VRPawn));
+	}
+}
+
+void ASwitchablePlayerController::SetMovementInputEnabled(bool bNewEnabled)
+{
+	bEnableMovementInput = bNewEnabled;
+}
+
+void ASwitchablePlayerController::SetLookInputEnabled(bool bNewEnabled)
+{
+	bEnableLookInput = bNewEnabled;
 }
 
 void ASwitchablePlayerController::ApplyModeTransition(ESwitchablePawnMode NewMode, ESwitchablePawnMode PreviousMode)
@@ -401,6 +423,11 @@ void ASwitchablePlayerController::AddMappingContextToLocalPlayer()
 
 void ASwitchablePlayerController::HandleMove(const FInputActionValue& Value)
 {
+	if (!bEnableMovementInput)
+	{
+		return;
+	}
+
 	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
 	{
 		SwitchablePawn->Move(Value.Get<FVector2D>());
@@ -409,6 +436,11 @@ void ASwitchablePlayerController::HandleMove(const FInputActionValue& Value)
 
 void ASwitchablePlayerController::HandleLook(const FInputActionValue& Value)
 {
+	if (!bEnableLookInput)
+	{
+		return;
+	}
+
 	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
 	{
 		FVector2D LookValue = Value.Get<FVector2D>();
@@ -516,6 +548,7 @@ ASwitchableBaseCharacter* ASwitchablePlayerController::GetOrCreatePawnForMode(ES
 	if (*StoredPawn)
 	{
 		ApplyMovementSettingsToPawn(*StoredPawn);
+		ApplyVRSettingsToPawn(Cast<ASwitchableVRCharacter>(*StoredPawn));
 		(*StoredPawn)->SetSwitchableActive(false);
 	}
 	return *StoredPawn;
@@ -526,6 +559,14 @@ void ASwitchablePlayerController::ApplyMovementSettingsToPawn(ASwitchableBaseCha
 	if (SwitchablePawn)
 	{
 		SwitchablePawn->SetConstrainMovementToNavMesh(bConstrainMovementToNavMesh);
+	}
+}
+
+void ASwitchablePlayerController::ApplyVRSettingsToPawn(ASwitchableVRCharacter* SwitchableVRPawn) const
+{
+	if (SwitchableVRPawn)
+	{
+		SwitchableVRPawn->SetTeleportMovementEnabled(bEnableVRTeleportMovement);
 	}
 }
 
