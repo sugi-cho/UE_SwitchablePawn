@@ -27,6 +27,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Start")
 	bool ResolvePresetPointTransform(const FSwitchableTeleportPoint& Point, FTransform& OutTransform) const;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Start", meta = (ClampMin = 0.0))
+	float ReturnDistanceThreshold = 0.0f;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Start")
 	TObjectPtr<USceneComponent> SceneRoot;
 
@@ -41,4 +44,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Start")
 	TArray<FSwitchableTeleportPoint> PresetPoints;
+
+protected:
+	virtual void Tick(float DeltaSeconds) override;
 };
