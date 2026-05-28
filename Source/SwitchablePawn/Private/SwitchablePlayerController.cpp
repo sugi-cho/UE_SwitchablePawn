@@ -606,7 +606,7 @@ ASwitchablePawnTeleportPoint* ASwitchablePlayerController::FindTeleportPointByNa
 {
 	for (TActorIterator<ASwitchablePawnTeleportPoint> It(GetWorld()); It; ++It)
 	{
-		if (It->GetFName() == PointName)
+		if (It->TeleportPointName == PointName || It->GetFName() == PointName)
 		{
 			return *It;
 		}

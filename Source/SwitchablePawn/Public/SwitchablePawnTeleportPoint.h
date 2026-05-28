@@ -6,6 +6,8 @@
 #include "SwitchablePawnTeleportPoint.generated.h"
 
 class UArrowComponent;
+class USphereComponent;
+struct FPropertyChangedEvent;
 
 UCLASS(Blueprintable)
 class SWITCHABLEPAWN_API ASwitchablePawnTeleportPoint : public AActor
@@ -15,11 +17,22 @@ class SWITCHABLEPAWN_API ASwitchablePawnTeleportPoint : public AActor
 public:
 	ASwitchablePawnTeleportPoint();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostRename(UObject* OldOuter, FName OldName) override;
+#endif
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport Point")
 	FTransform GetTeleportTransform() const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point", meta = (ClampMin = 0.0))
 	float ReturnDistanceThreshold = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Teleport Point", meta = (ExposeOnSpawn = true))
+	FName TeleportPointName = NAME_None;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point")
 	TObjectPtr<USceneComponent> SceneRoot;
@@ -27,9 +40,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point")
 	TObjectPtr<UArrowComponent> Arrow;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point")
+	TObjectPtr<USphereComponent> Gizmo;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Teleport Point")
 	bool bSetAsDefaultStart = false;
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
+
+private:
+	void SyncActorNameFromTeleportPointName();
+	void SyncTeleportPointNameFromActorName();
+	bool bSyncingTeleportPointName = false;
 };

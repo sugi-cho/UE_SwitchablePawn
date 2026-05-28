@@ -71,6 +71,7 @@ Level に `ASwitchablePawnTeleportPoint` を配置します。
 主な設定:
 
 - `bSetAsDefaultStart`: 起動時の位置として使う
+- `TeleportPointName`: Spawn 時に指定する名前。重複時は自動でユニーク化される
 - `ActorName`: `TeleportToPointByName()` で検索する名前。Level 上で自動的に一意になる
 
 Blueprint / C++ から次の API で移動できます。
