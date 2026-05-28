@@ -21,8 +21,8 @@ public:
 	virtual void BeginPlay() override;
 
 #if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostRename(UObject* OldOuter, FName OldName) override;
+	virtual bool ShouldTickIfViewportsOnly() const override;
 #endif
 
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport Point")
@@ -31,7 +31,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point", meta = (ClampMin = 0.0))
 	float ReturnDistanceThreshold = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|Teleport Point", meta = (ExposeOnSpawn = true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point")
 	FName TeleportPointName = NAME_None;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|Teleport Point")
@@ -50,7 +50,7 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	void SyncActorNameFromTeleportPointName();
-	void SyncTeleportPointNameFromActorName();
+	void SyncActorLabelFromTeleportPointName();
+	void SyncTeleportPointNameFromActorLabel();
 	bool bSyncingTeleportPointName = false;
 };

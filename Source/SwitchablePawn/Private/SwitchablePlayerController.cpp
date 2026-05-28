@@ -305,6 +305,35 @@ bool ASwitchablePlayerController::TeleportToPointByIndex(int32 Index)
 	return false;
 }
 
+ASwitchablePawnTeleportPoint* ASwitchablePlayerController::SpawnTeleportPoint(const FTransform& SpawnTransform, FName TeleportPointName, bool bSetAsDefaultStart)
+{
+	if (!GetWorld())
+	{
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetPawn();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	ASwitchablePawnTeleportPoint* TeleportPoint = GetWorld()->SpawnActorDeferred<ASwitchablePawnTeleportPoint>(
+		ASwitchablePawnTeleportPoint::StaticClass(),
+		SpawnTransform,
+		this,
+		Cast<APawn>(GetPawn()),
+		SpawnParams.SpawnCollisionHandlingOverride);
+	if (!TeleportPoint)
+	{
+		return nullptr;
+	}
+
+	TeleportPoint->TeleportPointName = TeleportPointName;
+	TeleportPoint->bSetAsDefaultStart = bSetAsDefaultStart;
+	TeleportPoint->FinishSpawning(SpawnTransform);
+	return TeleportPoint;
+}
+
 void ASwitchablePlayerController::EnsureFallbackInputAssets()
 {
 	if (!MoveAction)

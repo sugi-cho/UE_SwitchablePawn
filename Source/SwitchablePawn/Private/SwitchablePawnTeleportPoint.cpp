@@ -14,6 +14,9 @@
 ASwitchablePawnTeleportPoint::ASwitchablePawnTeleportPoint()
 {
 	PrimaryActorTick.bCanEverTick = true;
+#if WITH_EDITOR
+	PrimaryActorTick.bStartWithTickEnabled = true;
+#endif
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -33,55 +36,34 @@ ASwitchablePawnTeleportPoint::ASwitchablePawnTeleportPoint()
 void ASwitchablePawnTeleportPoint::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	SyncActorNameFromTeleportPointName();
+#if WITH_EDITOR
+	if (GetWorld() && !GetWorld()->IsGameWorld())
+	{
+		SyncActorLabelFromTeleportPointName();
+		SyncTeleportPointNameFromActorLabel();
+	}
+#endif
 }
 
 void ASwitchablePawnTeleportPoint::BeginPlay()
 {
 	Super::BeginPlay();
-	SyncActorNameFromTeleportPointName();
 }
 
 #if WITH_EDITOR
-void ASwitchablePawnTeleportPoint::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+bool ASwitchablePawnTeleportPoint::ShouldTickIfViewportsOnly() const
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(ASwitchablePawnTeleportPoint, TeleportPointName))
-	{
-		SyncActorNameFromTeleportPointName();
-	}
+	return true;
 }
 
 void ASwitchablePawnTeleportPoint::PostRename(UObject* OldOuter, FName OldName)
 {
 	Super::PostRename(OldOuter, OldName);
-	SyncTeleportPointNameFromActorName();
+	SyncTeleportPointNameFromActorLabel();
 }
 #endif
 
-void ASwitchablePawnTeleportPoint::SyncActorNameFromTeleportPointName()
-{
-	if (bSyncingTeleportPointName || TeleportPointName.IsNone() || !GetWorld() || TeleportPointName == GetFName())
-	{
-		return;
-	}
-
-	bSyncingTeleportPointName = true;
-	const FName UniqueName = MakeUniqueObjectName(GetOuter(), GetClass(), TeleportPointName);
-	if (GetFName() != UniqueName)
-	{
-		Rename(*UniqueName.ToString(), GetOuter());
-#if WITH_EDITOR
-		SetActorLabel(UniqueName.ToString(), false);
-#endif
-	}
-
-	TeleportPointName = UniqueName;
-	bSyncingTeleportPointName = false;
-}
-
-void ASwitchablePawnTeleportPoint::SyncTeleportPointNameFromActorName()
+void ASwitchablePawnTeleportPoint::SyncTeleportPointNameFromActorLabel()
 {
 	if (bSyncingTeleportPointName)
 	{
@@ -89,10 +71,19 @@ void ASwitchablePawnTeleportPoint::SyncTeleportPointNameFromActorName()
 	}
 
 	bSyncingTeleportPointName = true;
-	TeleportPointName = GetFName();
-#if WITH_EDITOR
+	TeleportPointName = FName(*GetActorLabel());
+	bSyncingTeleportPointName = false;
+}
+
+void ASwitchablePawnTeleportPoint::SyncActorLabelFromTeleportPointName()
+{
+	if (bSyncingTeleportPointName || TeleportPointName.IsNone() || !GetWorld() || GetWorld()->IsGameWorld())
+	{
+		return;
+	}
+
+	bSyncingTeleportPointName = true;
 	SetActorLabel(TeleportPointName.ToString(), false);
-#endif
 	bSyncingTeleportPointName = false;
 }
 
@@ -100,6 +91,17 @@ void ASwitchablePawnTeleportPoint::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	(void)DeltaSeconds;
+
+#if WITH_EDITOR
+	if (!bSyncingTeleportPointName)
+	{
+		const FName ActorLabelName(*GetActorLabel());
+		if (TeleportPointName != ActorLabelName)
+		{
+			SyncTeleportPointNameFromActorLabel();
+		}
+	}
+#endif
 
 	if (!HasAuthority() || !bSetAsDefaultStart || ReturnDistanceThreshold <= 0.0f || !GetWorld())
 	{

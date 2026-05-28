@@ -83,6 +83,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
 	bool TeleportToPointByIndex(int32 Index);
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
+	ASwitchablePawnTeleportPoint* SpawnTeleportPoint(const FTransform& SpawnTransform, FName TeleportPointName, bool bSetAsDefaultStart = false);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn")
 	ESwitchablePawnMode DefaultMode = ESwitchablePawnMode::FirstPerson;
 
