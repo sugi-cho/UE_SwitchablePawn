@@ -1,4 +1,4 @@
-#include "SwitchablePawnStart.h"
+#include "SwitchablePawnTeleportPoint.h"
 
 #include "Components/ArrowComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -6,7 +6,7 @@
 #include "SwitchableBaseCharacter.h"
 #include "SwitchablePlayerController.h"
 
-ASwitchablePawnStart::ASwitchablePawnStart()
+ASwitchablePawnTeleportPoint::ASwitchablePawnTeleportPoint()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -17,18 +17,18 @@ ASwitchablePawnStart::ASwitchablePawnStart()
 	Arrow->SetupAttachment(SceneRoot);
 }
 
-void ASwitchablePawnStart::Tick(float DeltaSeconds)
+void ASwitchablePawnTeleportPoint::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	(void)DeltaSeconds;
 
-	if (!HasAuthority() || !bUseAsDefaultStart || ReturnDistanceThreshold <= 0.0f || !GetWorld())
+	if (!HasAuthority() || !bSetAsDefaultStart || ReturnDistanceThreshold <= 0.0f || !GetWorld())
 	{
 		return;
 	}
 
-	const FVector StartLocation = GetActorLocation();
-	const FTransform StartTransform = GetStartTransform();
+const FVector StartLocation = GetActorLocation();
+const FTransform StartTransform = GetTeleportTransform();
 	const float ReturnDistanceSq = FMath::Square(ReturnDistanceThreshold);
 
 	for (int32 PlayerIndex = 0;; ++PlayerIndex)
@@ -59,43 +59,7 @@ void ASwitchablePawnStart::Tick(float DeltaSeconds)
 	}
 }
 
-bool ASwitchablePawnStart::FindPresetPointByName(FName PointName, FSwitchableTeleportPoint& OutPoint) const
-{
-	for (const FSwitchableTeleportPoint& Point : PresetPoints)
-	{
-		if (Point.Name == PointName)
-		{
-			OutPoint = Point;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool ASwitchablePawnStart::FindPresetPointByIndex(int32 Index, FSwitchableTeleportPoint& OutPoint) const
-{
-	if (!PresetPoints.IsValidIndex(Index))
-	{
-		return false;
-	}
-
-	OutPoint = PresetPoints[Index];
-	return true;
-}
-
-FTransform ASwitchablePawnStart::GetStartTransform() const
+FTransform ASwitchablePawnTeleportPoint::GetTeleportTransform() const
 {
 	return GetActorTransform();
-}
-
-bool ASwitchablePawnStart::ResolvePresetPointTransform(const FSwitchableTeleportPoint& Point, FTransform& OutTransform) const
-{
-	if (Point.TargetActor)
-	{
-		OutTransform = Point.TargetActor->GetActorTransform();
-		return true;
-	}
-
-	return false;
 }

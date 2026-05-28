@@ -16,7 +16,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "SwitchableBaseCharacter.h"
 #include "SwitchableFirstPersonCharacter.h"
-#include "SwitchablePawnStart.h"
+#include "SwitchablePawnTeleportPoint.h"
 #include "SwitchableThirdPersonCharacter.h"
 #include "SwitchableVRCharacter.h"
 
@@ -262,27 +262,29 @@ void ASwitchablePlayerController::SetVRModeEnabled(bool bEnabled)
 	}
 }
 
-bool ASwitchablePlayerController::TeleportToStartPoint(FName PointName)
+bool ASwitchablePlayerController::TeleportToStartPoint()
 {
-	FSwitchableTeleportPoint Point;
-	if (!FindTeleportPoint(PointName, Point))
+	return TeleportToPoint(FindDefaultSwitchableTeleportPoint());
+}
+
+bool ASwitchablePlayerController::TeleportToPointByName(FName PointName)
+{
+	if (ASwitchablePawnTeleportPoint* TeleportPoint = FindTeleportPointByName(PointName))
+	{
+		return TeleportToPoint(TeleportPoint);
+	}
+
+	return false;
+}
+
+bool ASwitchablePlayerController::TeleportToPoint(ASwitchablePawnTeleportPoint* TeleportPoint)
+{
+	if (!TeleportPoint)
 	{
 		return false;
 	}
 
-	if (!IsValid(Point.TargetActor))
-	{
-		return false;
-	}
-
-	FTransform TargetTransform = Point.TargetActor->GetActorTransform();
-	if (Point.bKeepCurrentYaw)
-	{
-		FRotator Rotation = TargetTransform.Rotator();
-		Rotation.Yaw = GetControlRotation().Yaw;
-		TargetTransform.SetRotation(Rotation.Quaternion());
-	}
-
+	const FTransform TargetTransform = TeleportPoint->GetTeleportTransform();
 	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
 	{
 		SwitchablePawn->TeleportToSwitchableTransform(TargetTransform);
@@ -293,32 +295,11 @@ bool ASwitchablePlayerController::TeleportToStartPoint(FName PointName)
 	return false;
 }
 
-bool ASwitchablePlayerController::TeleportToStartPointByIndex(int32 Index)
+bool ASwitchablePlayerController::TeleportToPointByIndex(int32 Index)
 {
-	FSwitchableTeleportPoint Point;
-	if (!FindTeleportPointByIndex(Index, Point))
+	if (ASwitchablePawnTeleportPoint* TeleportPoint = FindTeleportPointByIndex(Index))
 	{
-		return false;
-	}
-
-	if (!IsValid(Point.TargetActor))
-	{
-		return false;
-	}
-
-	FTransform TargetTransform = Point.TargetActor->GetActorTransform();
-	if (Point.bKeepCurrentYaw)
-	{
-		FRotator Rotation = TargetTransform.Rotator();
-		Rotation.Yaw = GetControlRotation().Yaw;
-		TargetTransform.SetRotation(Rotation.Quaternion());
-	}
-
-	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
-	{
-		SwitchablePawn->TeleportToSwitchableTransform(TargetTransform);
-		SetControlRotation(TargetTransform.Rotator());
-		return true;
+		return TeleportToPoint(TeleportPoint);
 	}
 
 	return false;
@@ -601,47 +582,51 @@ TSubclassOf<ASwitchableBaseCharacter> ASwitchablePlayerController::GetPawnClassF
 	}
 }
 
-ASwitchablePawnStart* ASwitchablePlayerController::FindDefaultSwitchableStart() const
+ASwitchablePawnTeleportPoint* ASwitchablePlayerController::FindDefaultSwitchableTeleportPoint() const
 {
-	ASwitchablePawnStart* FirstStart = nullptr;
+	ASwitchablePawnTeleportPoint* FirstTeleportPoint = nullptr;
 
-	for (TActorIterator<ASwitchablePawnStart> It(GetWorld()); It; ++It)
+	for (TActorIterator<ASwitchablePawnTeleportPoint> It(GetWorld()); It; ++It)
 	{
-		ASwitchablePawnStart* Start = *It;
-		if (!FirstStart)
+		ASwitchablePawnTeleportPoint* TeleportPoint = *It;
+		if (!FirstTeleportPoint)
 		{
-			FirstStart = Start;
+			FirstTeleportPoint = TeleportPoint;
 		}
-		if (Start->bUseAsDefaultStart)
+		if (TeleportPoint->bSetAsDefaultStart)
 		{
-			return Start;
+			return TeleportPoint;
 		}
 	}
 
-	return FirstStart;
+	return FirstTeleportPoint;
 }
 
-bool ASwitchablePlayerController::FindTeleportPoint(FName PointName, FSwitchableTeleportPoint& OutPoint) const
+ASwitchablePawnTeleportPoint* ASwitchablePlayerController::FindTeleportPointByName(FName PointName) const
 {
-	for (TActorIterator<ASwitchablePawnStart> It(GetWorld()); It; ++It)
+	for (TActorIterator<ASwitchablePawnTeleportPoint> It(GetWorld()); It; ++It)
 	{
-		if (It->FindPresetPointByName(PointName, OutPoint))
+		if (It->GetFName() == PointName)
 		{
-			return true;
+			return *It;
 		}
 	}
 
-	return false;
+	return nullptr;
 }
 
-bool ASwitchablePlayerController::FindTeleportPointByIndex(int32 Index, FSwitchableTeleportPoint& OutPoint) const
+ASwitchablePawnTeleportPoint* ASwitchablePlayerController::FindTeleportPointByIndex(int32 Index) const
 {
-	if (ASwitchablePawnStart* Start = FindDefaultSwitchableStart())
+	int32 CurrentIndex = 0;
+	for (TActorIterator<ASwitchablePawnTeleportPoint> It(GetWorld()); It; ++It, ++CurrentIndex)
 	{
-		return Start->FindPresetPointByIndex(Index, OutPoint);
+		if (CurrentIndex == Index)
+		{
+			return *It;
+		}
 	}
 
-	return false;
+	return nullptr;
 }
 
 FSwitchablePawnRuntimeState ASwitchablePlayerController::BuildInitialRuntimeState() const
@@ -649,9 +634,9 @@ FSwitchablePawnRuntimeState ASwitchablePlayerController::BuildInitialRuntimeStat
 	FSwitchablePawnRuntimeState RuntimeState;
 	RuntimeState.ControlRotation = GetControlRotation();
 
-	if (ASwitchablePawnStart* Start = FindDefaultSwitchableStart())
+	if (ASwitchablePawnTeleportPoint* TeleportPoint = FindDefaultSwitchableTeleportPoint())
 	{
-		RuntimeState.Transform = Start->GetStartTransform();
+		RuntimeState.Transform = TeleportPoint->GetTeleportTransform();
 		RuntimeState.ControlRotation = RuntimeState.Transform.Rotator();
 		return RuntimeState;
 	}

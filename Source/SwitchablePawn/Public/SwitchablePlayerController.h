@@ -8,7 +8,7 @@
 
 class ASwitchableBaseCharacter;
 class ASwitchableFirstPersonCharacter;
-class ASwitchablePawnStart;
+class ASwitchablePawnTeleportPoint;
 class ASwitchableThirdPersonCharacter;
 class ASwitchableVRCharacter;
 class UInputAction;
@@ -72,10 +72,16 @@ public:
 	bool IsLookInputEnabled() const { return bEnableLookInput; }
 
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
-	bool TeleportToStartPoint(FName PointName);
+	bool TeleportToStartPoint();
 
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
-	bool TeleportToStartPointByIndex(int32 Index);
+	bool TeleportToPointByName(FName PointName);
+
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
+	bool TeleportToPoint(ASwitchablePawnTeleportPoint* TeleportPoint);
+
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport")
+	bool TeleportToPointByIndex(int32 Index);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn")
 	ESwitchablePawnMode DefaultMode = ESwitchablePawnMode::FirstPerson;
@@ -178,9 +184,9 @@ private:
 
 	ASwitchableBaseCharacter* GetOrCreatePawnForMode(ESwitchablePawnMode Mode, const FSwitchablePawnRuntimeState& RuntimeState);
 	TSubclassOf<ASwitchableBaseCharacter> GetPawnClassForMode(ESwitchablePawnMode Mode) const;
-	ASwitchablePawnStart* FindDefaultSwitchableStart() const;
-	bool FindTeleportPoint(FName PointName, FSwitchableTeleportPoint& OutPoint) const;
-	bool FindTeleportPointByIndex(int32 Index, FSwitchableTeleportPoint& OutPoint) const;
+	ASwitchablePawnTeleportPoint* FindDefaultSwitchableTeleportPoint() const;
+	ASwitchablePawnTeleportPoint* FindTeleportPointByName(FName PointName) const;
+	ASwitchablePawnTeleportPoint* FindTeleportPointByIndex(int32 Index) const;
 	FSwitchablePawnRuntimeState BuildInitialRuntimeState() const;
 
 	UPROPERTY(Transient)

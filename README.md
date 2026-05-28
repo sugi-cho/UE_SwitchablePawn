@@ -66,18 +66,19 @@ NavMesh 制限時に `NavLinkProxy` で飛ばしたい場合は、`ASwitchableBa
 
 ## Level 設定
 
-Level に `ASwitchablePawnStart` を配置します。
+Level に `ASwitchablePawnTeleportPoint` を配置します。
 
 主な設定:
 
-- `bUseAsDefaultStart`: 起動時の位置として使う
-- `PresetPoints`: 名前付きテレポート位置。`TargetActor` に配置済み Actor を指定し、その Actor の Transform を使う
+- `bSetAsDefaultStart`: 起動時の位置として使う
+- `ActorName`: `TeleportToPointByName()` で検索する名前。Level 上で自動的に一意になる
 
 Blueprint / C++ から次の API で移動できます。
 
 ```cpp
-TeleportToStartPoint("Lobby");
-TeleportToStartPointByIndex(0);
+TeleportToStartPoint();
+TeleportToPointByName("Lobby");
+TeleportToPointByIndex(0);
 ```
 
 ## 入力
@@ -152,7 +153,7 @@ ThirdPerson の body mesh、VR の hand mesh は Plugin 内にコピーしませ
 - VR の HMD Camera / MotionController / Hand mesh slot
 - VR line trace teleport
 - NavMesh projection による teleport destination 判定
-- `ASwitchablePawnStart` による default start と preset teleport
+- `ASwitchablePawnTeleportPoint` による default start と teleport point
 
 ## 検証
 
