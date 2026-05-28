@@ -2,6 +2,7 @@
 
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "UObject/Class.h"
 #include "SwitchablePawnTeleportPoint.h"
 
 FName USwitchablePawnBlueprintLibrary::MakeUniqueNameFromNames(FName BaseName, const TArray<FName>& ExistingNames)
@@ -31,6 +32,41 @@ FName USwitchablePawnBlueprintLibrary::MakeUniqueNameFromNames(FName BaseName, c
 	}
 
 	return BaseName;
+}
+
+bool USwitchablePawnBlueprintLibrary::StringToEnumValue(UEnum* Enum, const FString& InString, int64& OutValue)
+{
+	if (!Enum)
+	{
+		return false;
+	}
+
+	const int64 Value = Enum->GetValueByNameString(InString, EGetByNameFlags::None);
+	if (Value == INDEX_NONE)
+	{
+		return false;
+	}
+
+	OutValue = Value;
+	return true;
+}
+
+bool USwitchablePawnBlueprintLibrary::StringToSwitchablePawnMode(const FString& InString, ESwitchablePawnMode& OutMode)
+{
+	const UEnum* Enum = StaticEnum<ESwitchablePawnMode>();
+	if (!Enum)
+	{
+		return false;
+	}
+
+	const int64 Value = Enum->GetValueByNameString(InString, EGetByNameFlags::None);
+	if (Value == INDEX_NONE)
+	{
+		return false;
+	}
+
+	OutMode = static_cast<ESwitchablePawnMode>(Value);
+	return true;
 }
 
 ASwitchablePawnTeleportPoint* USwitchablePawnBlueprintLibrary::SpawnTeleportPoint(
