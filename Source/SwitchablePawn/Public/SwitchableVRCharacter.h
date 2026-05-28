@@ -52,6 +52,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|VR")
 	bool IsTeleportMovementEnabled() const { return bEnableTeleportMovement; }
 
+	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|VR")
+	void SetProjectTeleportToNavigation(bool bNewEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|VR")
+	bool IsTeleportProjectedToNavigation() const { return bProjectTeleportToNavigation; }
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Switchable Pawn|VR")
 	TObjectPtr<USceneComponent> VRRoot;
 

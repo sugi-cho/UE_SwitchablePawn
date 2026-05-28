@@ -300,6 +300,20 @@ void ASwitchableVRCharacter::SetTeleportMovementEnabled(bool bNewEnabled)
 	}
 }
 
+void ASwitchableVRCharacter::SetProjectTeleportToNavigation(bool bNewEnabled)
+{
+	bProjectTeleportToNavigation = bNewEnabled;
+
+	if (bTeleportAiming)
+	{
+		UpdateTeleportAim();
+	}
+	else
+	{
+		RefreshTeleportPreview();
+	}
+}
+
 FVector ASwitchableVRCharacter::GetTeleportTraceStartLocation(const UMotionControllerComponent* TraceController) const
 {
 	if (!TraceController)

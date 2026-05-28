@@ -570,6 +570,11 @@ void ASwitchablePlayerController::ApplyMovementSettingsToPawn(ASwitchableBaseCha
 	{
 		SwitchablePawn->SetConstrainMovementToNavMesh(bConstrainMovementToNavMesh);
 		SwitchablePawn->SetAffectedByGravity(bAffectedByGravity);
+
+		if (ASwitchableVRCharacter* SwitchableVRPawn = Cast<ASwitchableVRCharacter>(SwitchablePawn))
+		{
+			SwitchableVRPawn->SetProjectTeleportToNavigation(bConstrainMovementToNavMesh);
+		}
 	}
 }
 
