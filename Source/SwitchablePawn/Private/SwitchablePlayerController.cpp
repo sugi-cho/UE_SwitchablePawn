@@ -284,15 +284,7 @@ bool ASwitchablePlayerController::TeleportToPoint(ASwitchablePawnTeleportPoint* 
 		return false;
 	}
 
-	const FTransform TargetTransform = TeleportPoint->GetTeleportTransform();
-	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
-	{
-		SwitchablePawn->TeleportToSwitchableTransform(TargetTransform);
-		SetControlRotation(TargetTransform.Rotator());
-		return true;
-	}
-
-	return false;
+	return TeleportToTransform(TeleportPoint->GetTeleportTransform());
 }
 
 bool ASwitchablePlayerController::TeleportToPointByIndex(int32 Index)
@@ -300,6 +292,18 @@ bool ASwitchablePlayerController::TeleportToPointByIndex(int32 Index)
 	if (ASwitchablePawnTeleportPoint* TeleportPoint = FindTeleportPointByIndex(Index))
 	{
 		return TeleportToPoint(TeleportPoint);
+	}
+
+	return false;
+}
+
+bool ASwitchablePlayerController::TeleportToTransform(const FTransform& TargetTransform)
+{
+	if (ASwitchableBaseCharacter* SwitchablePawn = Cast<ASwitchableBaseCharacter>(GetPawn()))
+	{
+		SwitchablePawn->TeleportToSwitchableTransform(TargetTransform);
+		SetControlRotation(TargetTransform.Rotator());
+		return true;
 	}
 
 	return false;
