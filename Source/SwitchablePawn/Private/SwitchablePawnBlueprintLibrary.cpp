@@ -5,35 +5,6 @@
 #include "UObject/Class.h"
 #include "SwitchablePawnTeleportPoint.h"
 
-FName USwitchablePawnBlueprintLibrary::MakeUniqueNameFromNames(FName BaseName, const TArray<FName>& ExistingNames)
-{
-	if (BaseName.IsNone())
-	{
-		return NAME_None;
-	}
-
-	auto IsTaken = [&ExistingNames](const FName& Candidate)
-	{
-		return ExistingNames.Contains(Candidate);
-	};
-
-	if (!IsTaken(BaseName))
-	{
-		return BaseName;
-	}
-
-	for (int32 Index = 0; Index < TNumericLimits<int32>::Max(); ++Index)
-	{
-		const FName Candidate(*FString::Printf(TEXT("%s_%d"), *BaseName.ToString(), Index));
-		if (!IsTaken(Candidate))
-		{
-			return Candidate;
-		}
-	}
-
-	return BaseName;
-}
-
 bool USwitchablePawnBlueprintLibrary::StringToEnumValue(UEnum* Enum, const FString& InString, int64& OutValue)
 {
 	if (!Enum)

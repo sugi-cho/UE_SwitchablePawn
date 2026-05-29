@@ -13,9 +13,6 @@ class SWITCHABLEPAWN_API USwitchablePawnBlueprintLibrary : public UBlueprintFunc
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Name")
-	static FName MakeUniqueNameFromNames(FName BaseName, const TArray<FName>& ExistingNames);
-
 	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Enum")
 	static bool StringToEnumValue(UEnum* Enum, const FString& InString, int64& OutValue);
 
