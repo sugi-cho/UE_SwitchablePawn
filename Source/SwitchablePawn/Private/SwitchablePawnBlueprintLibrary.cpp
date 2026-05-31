@@ -40,6 +40,17 @@ bool USwitchablePawnBlueprintLibrary::StringToSwitchablePawnMode(const FString& 
 	return true;
 }
 
+FName USwitchablePawnBlueprintLibrary::EnumValueToName(ESwitchablePawnMode InValue)
+{
+	const UEnum* Enum = StaticEnum<ESwitchablePawnMode>();
+	if (!Enum)
+	{
+		return NAME_None;
+	}
+
+	return FName(*Enum->GetNameStringByValue(static_cast<int64>(InValue)));
+}
+
 ASwitchablePawnTeleportPoint* USwitchablePawnBlueprintLibrary::SpawnTeleportPoint(
 	UObject* WorldContextObject,
 	TSubclassOf<ASwitchablePawnTeleportPoint> TeleportPointClass,

@@ -19,6 +19,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Enum")
 	static bool StringToSwitchablePawnMode(const FString& InString, ESwitchablePawnMode& OutMode);
 
+	UFUNCTION(BlueprintPure, Category = "Switchable Pawn|Enum", meta = (DisplayName = "Enum Value To Name"))
+	static FName EnumValueToName(ESwitchablePawnMode InValue);
+
 	UFUNCTION(BlueprintCallable, Category = "Switchable Pawn|Teleport", meta = (WorldContext = "WorldContextObject", DefaultToSelf = "WorldContextObject"))
 	static ASwitchablePawnTeleportPoint* SpawnTeleportPoint(
 		UObject* WorldContextObject,
