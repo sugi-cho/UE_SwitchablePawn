@@ -71,12 +71,17 @@ void ASwitchablePawnTeleportPoint::SyncTeleportPointNameFromActorLabel()
 	}
 
 	bSyncingTeleportPointName = true;
+#if WITH_EDITOR
 	TeleportPointName = FName(*GetActorLabel());
+#else
+	TeleportPointName = GetFName();
+#endif
 	bSyncingTeleportPointName = false;
 }
 
 void ASwitchablePawnTeleportPoint::SyncActorLabelFromTeleportPointName()
 {
+#if WITH_EDITOR
 	if (bSyncingTeleportPointName || TeleportPointName.IsNone() || !GetWorld() || GetWorld()->IsGameWorld())
 	{
 		return;
@@ -85,6 +90,10 @@ void ASwitchablePawnTeleportPoint::SyncActorLabelFromTeleportPointName()
 	bSyncingTeleportPointName = true;
 	SetActorLabel(TeleportPointName.ToString(), false);
 	bSyncingTeleportPointName = false;
+#else
+	(void)bSyncingTeleportPointName;
+	(void)TeleportPointName;
+#endif
 }
 
 void ASwitchablePawnTeleportPoint::Tick(float DeltaSeconds)
