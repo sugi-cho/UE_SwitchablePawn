@@ -121,6 +121,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR")
 	bool bProjectTeleportToNavigation = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR", meta = (ClampMin = 0.0))
+	float TeleportNavMeshSnapDistance = 100.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Switchable Pawn|VR|Teleport Preview")
 	bool bUseTeleportPreviewMesh = false;
 
@@ -185,6 +188,7 @@ private:
 	void ClearTeleportPreviewMesh();
 	FVector GetTeleportTraceStartLocation(const UMotionControllerComponent* TraceController) const;
 	FRotator GetTeleportTraceRotation(const UMotionControllerComponent* TraceController) const;
+	bool TryProjectTeleportDestinationToNavMesh(const FVector& SourceLocation, FVector& OutLocation) const;
 
 	bool bTeleportAiming = false;
 	bool bWidgetInteractionAiming = false;

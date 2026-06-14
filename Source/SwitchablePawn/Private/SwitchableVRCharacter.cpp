@@ -334,6 +334,30 @@ FRotator ASwitchableVRCharacter::GetTeleportTraceRotation(const UMotionControlle
 	return (TraceController->GetComponentRotation() + TeleportTraceRotationOffset).GetNormalized();
 }
 
+bool ASwitchableVRCharacter::TryProjectTeleportDestinationToNavMesh(const FVector& SourceLocation, FVector& OutLocation) const
+{
+	if (!bProjectTeleportToNavigation || !GetWorld())
+	{
+		OutLocation = SourceLocation;
+		return true;
+	}
+
+	if (UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+	{
+		FNavLocation ProjectedLocation;
+		if (NavSystem->ProjectPointToNavigation(SourceLocation, ProjectedLocation, TeleportProjectionExtent))
+		{
+			if (FVector::DistSquared(SourceLocation, ProjectedLocation.Location) <= FMath::Square(TeleportNavMeshSnapDistance))
+			{
+				OutLocation = ProjectedLocation.Location;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 float ASwitchableVRCharacter::GetTeleportAimYawDelta() const
 {
 	const UMotionControllerComponent* TraceController = TeleportTraceController ? TeleportTraceController.Get() : RightController.Get();
@@ -597,16 +621,12 @@ void ASwitchableVRCharacter::UpdateTeleportAim()
 	FVector Candidate = Hit.ImpactPoint;
 	if (bProjectTeleportToNavigation)
 	{
-		FNavLocation ProjectedLocation;
-		if (UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		const FVector HitLocation = Candidate;
+		if (!TryProjectTeleportDestinationToNavMesh(HitLocation, Candidate))
 		{
-			if (!NavSystem->ProjectPointToNavigation(Candidate, ProjectedLocation, TeleportProjectionExtent))
-			{
-				ClearTeleportPreviewMesh();
-				DrawDebugSphere(GetWorld(), Candidate, 20.0f, 12, FColor::Red, false, 0.0f);
-				return;
-			}
-			Candidate = ProjectedLocation.Location;
+			ClearTeleportPreviewMesh();
+			DrawDebugSphere(GetWorld(), HitLocation, 20.0f, 12, FColor::Red, false, 0.0f);
+			return;
 		}
 	}
 
